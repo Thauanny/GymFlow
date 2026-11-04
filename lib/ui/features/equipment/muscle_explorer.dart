@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../core/theme/app_palette.dart';
 import '../../../data/alternatives_service.dart';
 import '../../../data/equipment/equipment_catalog.dart';
 import '../../../models/labels.dart';
@@ -34,37 +35,52 @@ class _MuscleExplorerState extends State<MuscleExplorer> {
   @override
   Widget build(BuildContext context) {
     final muscle = widget.muscle;
+    final p = context.pal;
     return AppCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Filtrar por músculo',
+      padding: EdgeInsets.zero,
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          // Abre sozinho se já há um músculo escolhido.
+          initiallyExpanded: muscle != null,
+          tilePadding: const EdgeInsets.symmetric(horizontal: 18),
+          childrenPadding: const EdgeInsets.fromLTRB(18, 0, 18, 16),
+          leading: Icon(Icons.search_rounded, color: p.muted),
+          title: const Text(
+            'Explorar por músculo',
             style: TextStyle(fontWeight: FontWeight.w800),
           ),
-          const SizedBox(height: 10),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: Row(
-              children: [
-                for (final m in muscleNames.entries)
-                  if (m.key != 'neck')
-                    Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(m.value),
-                        selected: muscle == m.key,
-                        onSelected: (on) {
-                          setState(() => _shown = _pageSize);
-                          widget.onMuscle(on ? m.key : null);
-                        },
-                      ),
-                    ),
-              ],
-            ),
+          subtitle: Text(
+            muscle == null
+                ? 'Veja os exercícios de cada músculo em todos os equipamentos.'
+                : muscleLabel(muscle),
+            style: TextStyle(fontSize: 12.5, color: p.muted),
           ),
-          if (muscle != null) _results(context, muscle),
-        ],
+          expandedCrossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  for (final m in muscleNames.entries)
+                    if (m.key != 'neck')
+                      Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(m.value),
+                          selected: muscle == m.key,
+                          onSelected: (on) {
+                            setState(() => _shown = _pageSize);
+                            widget.onMuscle(on ? m.key : null);
+                          },
+                        ),
+                      ),
+                ],
+              ),
+            ),
+            if (muscle != null) _results(context, muscle),
+          ],
+        ),
       ),
     );
   }

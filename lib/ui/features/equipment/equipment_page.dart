@@ -106,7 +106,7 @@ class _EquipmentPageState extends State<EquipmentPage> {
       children: [
         const PresetsBar(),
         const DumbbellPicker(),
-        const SectionTitle('Explorar por músculo'),
+        const SizedBox(height: 12),
         MuscleExplorer(
           muscle: _muscle,
           onMuscle: (m) => setState(() => _muscle = m),
