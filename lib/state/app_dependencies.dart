@@ -5,6 +5,7 @@ import '../ai/relevance_ranker.dart';
 import '../ai/semantic_ranker_factory.dart';
 import '../data/alternatives_service.dart';
 import '../data/exercise_repository.dart';
+import '../data/dbx_exercises.dart';
 import '../data/gif_catalog.dart';
 import '../data/storage/change_tracking_store.dart';
 import '../data/storage/key_value_store.dart';
@@ -115,6 +116,10 @@ class AppDependencies {
   Future<void> _load() async {
     await gifs.load();
     await catalog.load();
+    // Exercícios que só existem no índice de GIFs também entram nos treinos.
+    catalog.addExtra(
+      exercisesFromGifIndex(gifs.alts, catalog.state.exercises, gifs),
+    );
     equipment.load();
     workouts.load();
     progress.load();

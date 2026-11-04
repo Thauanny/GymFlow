@@ -22,6 +22,7 @@ import 'confetti_painter.dart';
 import 'done_banner.dart';
 import 'finish_workout.dart';
 import 'rest_timer.dart';
+import 'share_sheet.dart';
 import 'ticket_row.dart';
 import 'workout_editor_page.dart';
 
@@ -152,6 +153,15 @@ class _WorkoutTicketPageState extends State<WorkoutTicketPage>
       appBar: AppBar(
         title: const Text('Ficha do treino'),
         actions: [
+          IconButton(
+            tooltip: 'Compartilhar no WhatsApp',
+            icon: const Icon(Icons.share_rounded),
+            onPressed: () => showShareSheet(
+              context,
+              title: 'Compartilhar ${w.focus.label}',
+              text: workoutShareText(context, w),
+            ),
+          ),
           IconButton(
             tooltip: 'Editar',
             icon: const Icon(Icons.edit_outlined),

@@ -52,7 +52,7 @@ class AlternativesService {
         final ids = <String>{};
         for (final a in _gifs.alts) {
           if (!altWorksMuscle(a, muscle)) continue;
-          final it = itemForAlt(a.name, a.equip);
+          final it = itemForAlt(a.name, a.equip, a.target);
           if (it != null) ids.add(it.id);
         }
         final rule = muscleRules[muscle];
@@ -87,13 +87,24 @@ class AlternativesService {
     final muscle = e.mainMuscle;
     if (muscle == null || _gifs.alts.isEmpty) return [];
     final kinds = _ownedKinds(owned);
-    final move = movementOf(e.name);
-    var pool = _gifs.alts
-        .where((a) => a.target == gifTarget(muscle) && a.equip != e.equipKey)
-        .toList();
-    if (move != null) {
-      final same = pool.where((a) => movementOf(a.name) == move).toList();
-      if (same.length >= 3) pool = same;
+    // Mesmo movimento primeiro (ex.: terra na polia → terra com barra), com os
+    // músculos "parentes" do movimento; sem isso, o mesmo músculo.
+    final family = movementFamily(e.name);
+    final targets = {
+      for (final m in relatedMuscles(family, muscle)) gifTarget(m),
+    };
+    final others = _gifs.alts.where((a) => a.equip != e.equipKey).toList();
+    var pool = family == null
+        ? <Alt>[]
+        : others
+              .where(
+                (a) =>
+                    movementFamily(a.name) == family &&
+                    targets.contains(a.target),
+              )
+              .toList();
+    if (pool.length < 3) {
+      pool = others.where((a) => a.target == gifTarget(muscle)).toList();
     }
     final mine = nameTokens(e.name);
     int overlap(Alt a) => nameTokens(a.name).intersection(mine).length;

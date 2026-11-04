@@ -97,6 +97,9 @@ const ptExercises3 = <String, String>{
   'One-Arm Side Deadlift': 'Levantamento terra lateral unilateral',
   'One-Arm Side Laterals': 'Elevação lateral unilateral',
   'One-Legged Cable Kickback': 'Coice unilateral na polia',
+  'Cable Standing Hip Extension': 'Extensão de quadril na polia em pé',
+  'Cable Assisted Inverse Leg Curl':
+      'Flexão invertida de pernas assistida na polia',
   'Open Palm Kettlebell Clean': 'Clean com kettlebell (palma aberta)',
   'Otis-Up': 'Otis-up (abdominal com anilha)',
   'Overhead Cable Curl': 'Rosca na polia acima da cabeça',

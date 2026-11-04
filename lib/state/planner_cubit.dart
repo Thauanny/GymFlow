@@ -356,6 +356,20 @@ class PlannerCubit extends Cubit<PlannerState> {
     );
   }
 
+  /// Todas as trocas possíveis para [current], agrupadas (sem corte).
+  SubstituteOptions substituteOptionsFor(Exercise current) {
+    final used = {
+      for (final d in state.drafts.values)
+        ...d.workout.items.map((i) => i.exerciseId),
+    };
+    return substituteOptions(
+      current: current,
+      pool: pool,
+      exclude: used,
+      profile: state.profile,
+    );
+  }
+
   void swapExercise(int day, int index, Exercise replacement) {
     final draft = state.drafts[day];
     if (draft == null) return;

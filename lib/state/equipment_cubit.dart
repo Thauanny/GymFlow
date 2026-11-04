@@ -71,7 +71,44 @@ class EquipmentCubit extends Cubit<EquipmentState> {
   void load() {
     final valid = equipItems.map((i) => i.id).toSet();
     final stored = _store.getStringList(_equipKey) ?? [];
+    // Categorias "Outros..." foram desfeitas: quem tinha uma delas marcada
+    // passa a ter as categorias que ficaram com esses exercícios.
+    const legacy = <String, List<String>>{
+      'b_free': ['b_olympic', 'b_stiff'],
+      'b_goodmorning': ['b_stiff'],
+      'b_deadlift': ['b_stiff'],
+      'b_hip': ['b_stiff'],
+      'b_hack': ['b_rack'],
+      'b_lunge': ['b_rack'],
+      'm_other': ['m_legpress'],
+      'c_other': ['c_chest', 'c_core'],
+      'c_face': ['c_shoulder'],
+      'c_delt': ['c_shoulder'],
+      'c_press': ['c_shoulder'],
+      'c_push': ['c_triceps'],
+      'c_tricext': ['c_triceps'],
+      'c_curl': ['c_biceps'],
+      'c_cross': ['c_chest'],
+      'c_chestp': ['c_chest'],
+      'c_pull': ['c_back'],
+      'c_vbar': ['c_back'],
+      'c_straight': ['c_back'],
+      'c_row': ['c_back'],
+      'c_highrow': ['c_back'],
+      'body only': [
+        'bw_chest',
+        'bw_back',
+        'bw_arms',
+        'bw_legs',
+        'bw_core',
+        'bw_stretch',
+      ],
+      'other': ['o_bar', 'o_core', 'o_plyo', 'o_cardio', 'o_strong'],
+      'd_free': <String>[],
+    };
     final equipment = {
+      for (final id in stored)
+        if (legacy.containsKey(id)) ...legacy[id]!,
       ...stored.where(valid.contains),
       // formato antigo: 'dumbbell' representava todos os halteres
       if (stored.contains('dumbbell'))
@@ -103,7 +140,9 @@ class EquipmentCubit extends Cubit<EquipmentState> {
     return [
       for (final e in _catalog.state.exercises)
         if (e.category == 'stretching' &&
-            (e.equipKey == 'body only' || sel.any((i) => itemMatches(i, e))))
+            (e.equipKey == 'body only' ||
+                e.equipKey == 'other' ||
+                sel.any((i) => itemMatches(i, e))))
           e,
     ];
   }

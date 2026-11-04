@@ -12,6 +12,7 @@ import '../planner/planner_page.dart';
 import 'missing_day_card.dart';
 import 'plan_history.dart';
 import 'plan_sheets.dart';
+import 'share_sheet.dart';
 import 'rest_day_card.dart';
 import 'week_picker.dart';
 import 'workout_card.dart';
@@ -40,7 +41,17 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
         ),
       ];
     }
+    final week = s.workouts.where((w) => w.weekday != null).toList();
     return [
+      OutlinedButton.icon(
+        onPressed: () => showShareSheet(
+          context,
+          title: 'Compartilhar a semana',
+          text: weekShareText(context, week),
+        ),
+        icon: const Icon(Icons.share_rounded),
+        label: const Text('Compartilhar'),
+      ),
       OutlinedButton.icon(
         onPressed: !ready
             ? null

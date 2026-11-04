@@ -22690,5 +22690,39 @@
       "Zottman_Preacher_Curl/1.jpg"
     ],
     "id": "Zottman_Preacher_Curl"
+  },
+  {
+    "name": "Cable Standing Hip Extension",
+    "force": "push",
+    "level": "intermediate",
+    "mechanic": "isolation",
+    "equipment": "cable",
+    "primaryMuscles": [
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings"
+    ],
+    "instructions": [],
+    "category": "strength",
+    "images": [],
+    "id": "Cable_Standing_Hip_Extension"
+  },
+  {
+    "name": "Cable Assisted Inverse Leg Curl",
+    "force": "pull",
+    "level": "intermediate",
+    "mechanic": "isolation",
+    "equipment": "cable",
+    "primaryMuscles": [
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "glutes"
+    ],
+    "instructions": [],
+    "category": "strength",
+    "images": [],
+    "id": "Cable_Assisted_Inverse_Leg_Curl"
   }
 ]

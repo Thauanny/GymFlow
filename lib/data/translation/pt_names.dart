@@ -1,3 +1,4 @@
+import 'pt_alt_names.dart';
 import 'pt_exercise_names.dart';
 
 const _ptPhrases = <String, String>{
@@ -178,7 +179,7 @@ const _ptWords = <String, String>{
 
 /// Nome do exercício em PT-BR: tradução curada quando existe; senão, por frases e palavras.
 String exerciseNamePt(String name) {
-  final curated = ptExerciseNames[name];
+  final curated = ptExerciseNames[name] ?? ptAltNames[name.toLowerCase()];
   if (curated != null) return curated;
   var s = name.toLowerCase().trim();
   final keys = _ptPhrases.keys.toList()

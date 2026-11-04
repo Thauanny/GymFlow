@@ -31,7 +31,7 @@ class AltCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    final target = itemForAlt(alt.name, alt.equip);
+    final target = itemForAlt(alt.name, alt.equip, alt.target);
     return BlocBuilder<EquipmentCubit, EquipmentState>(
       builder: (context, s) {
         final chosen = target != null && s.equipment.contains(target.id);

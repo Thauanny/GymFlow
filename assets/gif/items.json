@@ -24,38 +24,31 @@
     "m_squatm": "9n2149Z",
     "m_stairs": "j9Q5crt",
     "m_tbar": "aaXr7ld",
-    "m_tricep": "Ser9eQp"
+    "m_tricep": "Ser9eQp",
+    "m_ellip": "rjtuP6X",
+    "m_assist": "kiJ4Z2K",
+    "m_pulldown": "7F1DVzn"
   },
   "cables": {
-    "c_chestp": "nIR4Rwl",
-    "c_core": "WW95auq",
-    "c_cross": "0CXGHya",
-    "c_curl": "G08RZcQ",
-    "c_delt": "dB07vDu",
-    "c_face": "ZfyAGhK",
-    "c_glute": "HEJ6DIX",
-    "c_press": "PzQanLE",
-    "c_pull": "LEprlgG",
-    "c_row": "fUBheHs",
-    "c_straight": "DT14T9T",
-    "c_tricext": "2IxROQ1",
-    "c_vbar": "xBYcQHj"
+    "c_chest": "0CXGHya",
+    "c_back": "LEprlgG",
+    "c_shoulder": "ZfyAGhK",
+    "c_biceps": "G08RZcQ",
+    "c_triceps": "2IxROQ1",
+    "c_glute": "Kpajagk",
+    "c_core": "WW95auq"
   },
   "barbells": {
     "b_bench": "EIeI8Vf",
     "b_calf": "8ozhUIZ",
     "b_core": "7M66AVi",
     "b_curl": "25GPyDY",
-    "b_deadlift": "ila4NZS",
-    "b_free": "i6LWjok",
-    "b_hack": "5VCj6iH",
-    "b_hip": "qKBpF7I",
-    "b_lunge": "t8iSghb",
     "b_rack": "qXTaZnJ",
     "b_row": "eZyBC3j",
     "b_shoulder": "kTbSH9h",
     "b_stiff": "wQ2c4XD",
-    "b_triceps": "h8LFzo9"
+    "b_triceps": "h8LFzo9",
+    "b_olympic": "SiWCcTN"
   },
   "sections": {
     "sec_barbell": "EIeI8Vf",
@@ -68,14 +61,23 @@
   },
   "equipment_types": {
     "bands": "k6tUeqS",
-    "body only": "lBDjFxJ",
     "dumbbell": "NbVPDMW",
     "e-z curl bar": "6TG6x2w",
     "exercise ball": "Gn5FwYT",
     "foam roll": "0L2KwtI",
     "kettlebells": "UHJlbu3",
     "medicine ball": "7aolH9D",
-    "other": "NAgVB3t"
+    "bw_chest": "I4hDWkc",
+    "bw_back": "lBDjFxJ",
+    "bw_arms": "X6C6i5Y",
+    "bw_legs": "IZVHb27",
+    "bw_core": "Bn6TXyO",
+    "bw_stretch": "DFGXwZr",
+    "o_bar": "yJUHKTn",
+    "o_core": "NAgVB3t",
+    "o_plyo": "f9lVSSI",
+    "o_cardio": "e1e76I2",
+    "o_strong": "oZjMu1t"
   },
   "dumbbells": {
     "d_chest": "SpYC0Kp",

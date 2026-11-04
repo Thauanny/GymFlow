@@ -46,7 +46,7 @@ class GifCatalog {
         }
       }
       for (final e in _byName.entries) {
-        _tokens.add((nameTokens(e.key), e.value));
+        _tokens.add((_gifWords(e.key), e.value));
         _keys.add(e.key);
       }
     } catch (_) {
@@ -54,60 +54,189 @@ class GifCatalog {
     }
   }
 
+  /// Nome (em inglês) do exercício a que pertence um GIF (para conferência).
+  String? nameOf(String url) {
+    final id = url.split('/').last.replaceAll('.gif', '');
+    for (final e in _byName.entries) {
+      if (e.value == id) return e.key;
+    }
+    return null;
+  }
+
+  /// Fixa o GIF de um exercício que veio do próprio índice de GIFs.
+  void bind(String exerciseId, String url) => _cache[exerciseId] = url;
+
   String? itemGif(String itemId) {
     final id = _itemGifs[itemId];
     return id == null ? null : '$gifBase$id.gif';
   }
 
-  /// GIF correspondente ao exercício (similaridade de nome). É conservador:
-  /// sem um par confiável devolve null (a tela usa o desenho do aparelho),
-  /// em vez de mostrar o movimento de outro exercício.
-  String? gifFor(Exercise e) => _cache.putIfAbsent(
-    e.id,
-    () => _bestGif(
-      e.name,
-      e.equipKey,
-      // Alongamentos têm nomes parecidos entre si: só pareia quase igual.
-      min: e.category == 'stretching' ? .8 : .5,
-    ),
-  );
+  /// GIF correspondente ao exercício. Só aceita o GIF de **mesmo nome**: as
+  /// mesmas palavras (ignorando ordem, plural e preposições), contando também o
+  /// equipamento. Qualquer palavra a mais ou a menos (inclinado, sentado,
+  /// unilateral, com elástico...) é outro exercício. Sem par exato devolve null
+  /// e a tela usa as fotos da pessoa (e só depois o desenho).
+  String? gifFor(Exercise e) => _cache.putIfAbsent(e.id, () => _exactGif(e));
 
-  String? _bestGif(String name, String equipKey, {double min = .5}) {
-    final t = nameTokens(name);
-    var best = 0.0;
-    String? id;
+  String? _exactGif(Exercise e) {
+    final alias = _aliases[e.name.toLowerCase()];
+    final aliasId = alias == null ? null : _byName[alias];
+    if (aliasId != null) return '$gifBase$aliasId.gif';
+    final t = {..._gifWords(e.name), ...?_equipWord[e.equipKey]};
     for (var i = 0; i < _tokens.length; i++) {
       final (tk, gid) = _tokens[i];
-      final inter = t.intersection(tk).length;
-      if (inter == 0) continue;
-      if (!_compatible(equipKey, _keys[i], t, tk)) continue;
-      final score = inter / (t.length + tk.length - inter);
-      if (score > best) {
-        best = score;
-        id = gid;
-      }
+      if (tk.length != t.length || !tk.containsAll(t)) continue;
+      final allowed = _prefixEquip[_keys[i].split(' ').first];
+      if (allowed != null && !allowed.contains(e.equipKey)) continue;
+      return '$gifBase$gid.gif';
     }
-    return best >= min ? '$gifBase$id.gif' : null;
+    return null;
   }
 
-  /// Equipamento do GIF bate com o do exercício, as palavras que mudam o
-  /// movimento (stiff, sumô, inclinado...) aparecem nos dois lados e um nome
-  /// contém o outro (ignorando o equipamento).
-  static bool _compatible(
-    String equipKey,
-    String gifKey,
-    Set<String> a,
-    Set<String> b,
-  ) {
-    final prefix = gifKey.split(' ').first;
-    final allowed = _prefixEquip[prefix];
-    if (allowed != null && !allowed.contains(equipKey)) return false;
-    if (a.difference(b).union(b.difference(a)).any(_movementWords.contains)) {
-      return false;
-    }
-    final x = a.difference(_equipWords), y = b.difference(_equipWords);
-    return x.containsAll(y) || y.containsAll(x);
+  /// Palavras de um nome, inclusive as de 1 letra/número ("L-pull-up", "3/4").
+  static Set<String> _gifWords(String rawName) {
+    // "World's" é "worlds" (e não "world" + "s").
+    final name = rawName.replaceAll("'s", 's');
+    return _wordsOf(name);
   }
+
+  static Set<String> _wordsOf(String name) => {
+    ...nameTokens(name).map(_stem),
+    ...RegExp(
+      r'(?<![a-z0-9])[a-z0-9](?![a-z0-9])',
+    ).allMatches(name.toLowerCase()).map((m) => m.group(0)!),
+  }..removeAll(_neutral);
+
+  /// Formas que `nameTokens` deixa passar: "flyes"→"flye"→"fly",
+  /// "presses"→"presse"→"press", "crunches"→"crunche"→"crunch".
+  static String _stem(String w) {
+    if (w == 'flye') return 'fly';
+    if (w.length > 4 &&
+        (w.endsWith('sse') ||
+            w.endsWith('che') ||
+            w.endsWith('she') ||
+            w.endsWith('xe'))) {
+      return w.substring(0, w.length - 1);
+    }
+    return w;
+  }
+
+  /// Palavras que não mudam o exercício: "pegada média" é a pegada padrão,
+  /// "grip" só repete "wide/close" e "bodyweight" é só peso corporal.
+  static const _neutral = {'grip', 'medium', 'bodyweight'};
+
+  /// Equivalências conferidas à mão: o exercício da base tem outro nome, mas o
+  /// GIF mostra exatamente o mesmo movimento (nome em minúsculas → nome do GIF).
+  static const _aliases = <String, String>{
+    "power clean": "power clean",
+    "jogging, treadmill": "walking on incline treadmill",
+    "running, treadmill": "walking on incline treadmill",
+    "stairmaster": "walking on stepmill",
+    "step mill": "walking on stepmill",
+    "bicycling, stationary": "stationary bike walk",
+    "recumbent bike": "stationary bike walk",
+    "close-grip ez-bar press": "ez-bar close-grip bench press",
+    "jm press": "barbell jm bench press",
+    "wide-grip decline barbell bench press": "barbell decline wide-grip press",
+    "dumbbell one-arm triceps extension":
+        "dumbbell single-arm triceps extension (on bench)",
+    "alternate incline dumbbell curl": "dumbbell incline curl",
+    "flexor incline dumbbell curls": "dumbbell incline curl",
+    "bent over two-dumbbell row": "dumbbell bent over row",
+    "one-arm dumbbell row": "dumbbell single-arm bent-over row",
+    "barbell ab rollout": "barbell rollout",
+    "barbell side bend": "barbell side bent",
+    "barbell squat to a bench": "barbell bench squat",
+    "front barbell squat to a bench": "barbell bench front squat",
+    "barbell step ups": "barbell step-up",
+    "bench press - powerlifting": "barbell bench press",
+    "cable crunch": "cable kneeling crunch",
+    "cable hammer curls - rope attachment": "cable hammer curl (with rope)",
+    "cable rope overhead triceps extension":
+        "cable overhead triceps extension (rope attachment)",
+    "triceps overhead extension with rope":
+        "cable overhead triceps extension (rope attachment)",
+    "chair squat": "smith chair squat",
+    "close-grip ez bar curl": "ez-bar close-grip curl",
+    "decline ez bar triceps extension": "ez-bar decline triceps extension",
+    "decline smith press": "smith decline bench press",
+    "smith machine decline press": "smith decline bench press",
+    "dumbbell shoulder press": "dumbbell seated shoulder press",
+    "seated dumbbell press": "dumbbell seated shoulder press",
+    "standing dumbbell press": "dumbbell standing overhead press",
+    "dumbbell squat to a bench": "dumbbell bench squat",
+    "dumbbell step ups": "dumbbell step-up",
+    "front two-dumbbell raise": "dumbbell front raise",
+    "incline dumbbell press": "dumbbell incline bench press",
+    "hammer grip incline db bench press": "dumbbell incline hammer press",
+    "incline dumbbell bench with palms facing in":
+        "dumbbell palms in incline bench press",
+    "incline dumbbell flyes - with a twist": "dumbbell incline twisted flyes",
+    "kneeling high pulley row": "cable high row (kneeling)",
+    "kneeling single-arm high pulley row":
+        "cable single-arm straight back high row (kneeling)",
+    "leg press": "sled 45° leg press",
+    "lying cable curl": "cable lying biceps curl",
+    "lying close-grip barbell triceps extension behind the head":
+        "barbell lying close-grip triceps extension",
+    "lying close-grip bar curl on high pulley": "cable lying close-grip curl",
+    "lying t-bar row": "machine t bar row",
+    "machine bench press": "machine chest press",
+    "machine shoulder (military) press": "machine shoulder press",
+    "one-arm high-pulley cable side bends": "cable side bend",
+    "one-arm side laterals": "dumbbell single-arm lateral raise",
+    "one leg barbell squat": "barbell single-leg squat",
+    "one arm lat pulldown": "cable single-arm pulldown",
+    "pull through": "cable pull through (with rope)",
+    "reverse grip triceps pushdown": "cable reverse-grip pushdown",
+    "reverse machine flyes": "machine seated reverse fly",
+    "rope crunch": "cable standing crunch (with rope attachment)",
+    "standing rope crunch": "cable standing crunch (with rope attachment)",
+    "rocking standing calf raise": "barbell standing rocking leg calf raise",
+    "seated barbell military press": "barbell seated overhead press",
+    "side lateral raise": "dumbbell lateral raise",
+    "side laterals to front raise": "dumbbell lateral to front raise",
+    "seated side lateral raise": "dumbbell seated lateral raise",
+    "standing dumbbell upright row": "dumbbell upright row",
+    "standing dumbbell straight-arm front delt raise above head":
+        "dumbbell standing front raise above head",
+    "tricep dumbbell kickback": "dumbbell kickback",
+    "triceps pushdown": "cable triceps pushdown (v-bar)",
+    "triceps pushdown - v-bar attachment": "cable triceps pushdown (v-bar)",
+    "triceps pushdown - rope attachment":
+        "cable pushdown (with rope attachment)",
+    "two-arm dumbbell preacher curl": "dumbbell preacher curl",
+    "v-bar pulldown": "cable lateral pulldown with v-bar",
+    "wide-grip lat pulldown": "cable lat pulldown full range of motion",
+    "wide-grip pulldown behind the neck":
+        "cable wide-grip rear pulldown behind neck",
+    "wide stance barbell squat": "barbell wide squat",
+    "weighted jump squat": "barbell jump squat",
+    "sumo deadlift with bands": "barbell sumo deadlift",
+    "sumo deadlift with chains": "barbell sumo deadlift",
+    "rack pull with bands": "barbell rack pull",
+    "smith machine behind the back shrug": "smith back shrug",
+    "smith machine stiff-legged deadlift": "smith deadlift",
+    "split squat with dumbbells": "dumbbell single leg split squat",
+    "seated triceps press": "dumbbell seated triceps extension",
+    "dips - triceps version": "triceps dip",
+    "freehand jump squat": "jump squat",
+    "close-grip push-up off of a dumbbell": "push-up close-grip off dumbbell",
+    "elliptical trainer": "walk elliptical cross trainer",
+    "walking, treadmill": "walking on incline treadmill",
+  };
+
+  /// Palavra que o GIF usa para o equipamento do exercício.
+  static const _equipWord = <String, Set<String>>{
+    'barbell': {'barbell'},
+    'dumbbell': {'dumbbell'},
+    'cable': {'cable'},
+    'bands': {'band'},
+    'kettlebells': {'kettlebell'},
+    'e-z curl bar': {'ez', 'bar'},
+    'medicine ball': {'medicine', 'ball'},
+    'exercise ball': {'ball'},
+  };
 
   static const _prefixEquip = <String, Set<String>>{
     'dumbbell': {'dumbbell'},
@@ -119,91 +248,7 @@ class GifCatalog {
     'kettlebell': {'kettlebells'},
     'ez-bar': {'e-z curl bar'},
     'medicine': {'medicine ball'},
-    'exercise': {'exercise ball'},
     'sled': {'machine'},
-  };
-
-  static const _equipWords = <String>{
-    'dumbbell',
-    'barbell',
-    'cable',
-    'band',
-    'smith',
-    'kettlebell',
-    'ez',
-    'bar',
-    'medicine',
-    'ball',
-    'weighted',
-    'assisted',
-    'bodyweight',
-  };
-
-  static const _movementWords = <String>{
-    'stiff',
-    'sumo',
-    'romanian',
-    'incline',
-    'decline',
-    'reverse',
-    'wide',
-    'close',
-    'narrow',
-    'behind',
-    'seated',
-    'standing',
-    'lying',
-    'kneeling',
-    'single',
-    'alternate',
-    'hammer',
-    'preacher',
-    'bent',
-    'jump',
-    'front',
-    'rear',
-    'lateral',
-    'stretch',
-    'squat',
-    'curl',
-    'press',
-    'row',
-    'raise',
-    'extension',
-    'deadlift',
-    'lunge',
-    'fly',
-    'crunch',
-    'pulldown',
-    'pullup',
-    'pull',
-    'push',
-    'kickback',
-    'thrust',
-    'shrug',
-    'twist',
-    'dip',
-    'plank',
-    'bridge',
-    'calf',
-    'leg',
-    'hip',
-    'good',
-    'morning',
-    'goblet',
-    'hack',
-    'zercher',
-    'sissy',
-    'pistol',
-    'step',
-    'split',
-    'inner',
-    'outer',
-    'upper',
-    'lower',
-    'high',
-    'low',
-    'pause',
-    'overhead',
+    'exercise': {'exercise ball'},
   };
 }

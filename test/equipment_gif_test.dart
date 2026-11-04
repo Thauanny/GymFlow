@@ -44,12 +44,11 @@ void main() {
     expect(repeated, isEmpty, reason: 'GIFs repetidos entre aparelhos');
   });
 
-  test('aparelhos cujo GIF próprio saiu do ar usam o do exercício', () async {
+  test('todo aparelho do catálogo tem GIF próprio', () async {
     final (gifs, exercises) = await setup();
-    for (final id in ['c_push', 'c_highrow', 'm_ellip']) {
-      expect(gifs.itemGif(id), isNull, reason: '$id (link removido)');
-      final it = equipItems.firstWhere((i) => i.id == id);
-      expect(gifsForItem(it, gifs, exercises.cast()), isNotEmpty, reason: id);
+    for (final it in equipItems.where((i) => !i.rest)) {
+      if (!exercises.any((e) => itemMatches(it, e))) continue;
+      expect(gifs.itemGif(it.id), isNotNull, reason: it.id);
     }
   });
 }

@@ -7,6 +7,7 @@ import '../../../models/workout.dart';
 import '../../../state/workouts_cubit.dart';
 import '../../widgets/app_card.dart';
 import '../../widgets/dialogs.dart';
+import 'share_sheet.dart';
 import 'workout_editor_page.dart';
 import 'workout_ticket_page.dart';
 
@@ -63,6 +64,15 @@ class WorkoutCard extends StatelessWidget {
                         style: TextStyle(fontSize: 13, color: p.muted),
                       ),
                     ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: 'Compartilhar no WhatsApp',
+                  icon: const Icon(Icons.share_rounded),
+                  onPressed: () => showShareSheet(
+                    context,
+                    title: 'Compartilhar ${w.focus.label}',
+                    text: workoutShareText(context, w),
                   ),
                 ),
                 IconButton(

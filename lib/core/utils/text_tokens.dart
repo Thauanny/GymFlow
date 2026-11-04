@@ -22,6 +22,9 @@ const _stop = {
 Set<String> nameTokens(String s) => s
     .toLowerCase()
     .replaceAll('stability ball', 'exercise ball')
+    .replaceAll('one-legged', 'single leg')
+    .replaceAll('one legged', 'single leg')
+    .replaceAll('one-leg', 'single leg')
     .replaceAll('one-arm', 'single-arm')
     .replaceAll('one arm', 'single arm')
     .replaceAll('stiff-legged', 'stiff leg')

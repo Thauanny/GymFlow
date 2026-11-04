@@ -43,5 +43,23 @@ class CatalogCubit extends Cubit<CatalogState> {
     }
   }
 
+  /// Acrescenta exercícios que não vieram da base principal (ex.: os que só
+  /// têm GIF). Seguro de chamar de novo: ignora ids que já existem.
+  void addExtra(List<Exercise> extra) {
+    final fresh = [
+      for (final e in extra)
+        if (!state.byId.containsKey(e.id)) e,
+    ];
+    if (fresh.isEmpty) return;
+    final list = [...state.exercises, ...fresh];
+    emit(
+      CatalogState(
+        loading: false,
+        exercises: list,
+        byId: {for (final e in list) e.id: e},
+      ),
+    );
+  }
+
   Exercise? byId(String id) => state.byId[id];
 }
