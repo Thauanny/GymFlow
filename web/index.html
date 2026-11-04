@@ -18,21 +18,82 @@
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="description" content="GymFlow: escolha os equipamentos da sua academia e receba treinos sob medida para os seus dias e objetivos.">
+  <meta name="theme-color" content="#F7F7F4">
 
   <!-- iOS meta tags & icons -->
   <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="gymflow">
-  <link rel="apple-touch-icon" href="icons/Icon-192.png">
+  <meta name="apple-mobile-web-app-title" content="GymFlow">
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png">
 
   <!-- Favicon -->
-  <link rel="icon" type="image/png" href="favicon.png"/>
+  <link rel="icon" type="image/png" sizes="48x48" href="favicon.png"/>
 
   <title>GymFlow</title>
   <link rel="manifest" href="manifest.json">
+  <style>
+    /* Tela de abertura leve: aparece na hora, enquanto o app baixa (internet lenta). */
+    #splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#F7F7F4;color:#0B0B0C;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;z-index:10;transition:opacity .25s}
+    #splash .logo{display:flex;align-items:center;gap:10px;font-size:34px;font-weight:900;letter-spacing:.5px}
+    #splash .dot{width:14px;height:14px;border-radius:50%;background:#C8FF2E;box-shadow:0 0 0 2px #0B0B0C}
+    #splash .bar{width:160px;height:4px;border-radius:4px;background:#E6E6DF;overflow:hidden}
+    #splash .bar i{display:block;width:40%;height:100%;border-radius:4px;background:#0B0B0C;animation:load 1.1s ease-in-out infinite}
+    #splash p{margin:0;font-size:13px;color:#6E6E73}
+    #splash .help{display:none;flex-direction:column;align-items:center;gap:10px;max-width:300px;text-align:center}
+    #splash .help p{line-height:1.4}
+    #splash button{font:inherit;font-weight:700;padding:12px 18px;border-radius:14px;border:0;background:#0B0B0C;color:#C8FF2E;cursor:pointer}
+    #splash .err{font-size:11px;color:#C0392B;word-break:break-word}
+    @keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
+    @media (prefers-color-scheme:dark){#splash{background:#0B0B0C;color:#F5F5F2}#splash .dot{box-shadow:none}#splash .bar{background:#2B2B2F}#splash .bar i{background:#C8FF2E}}
+  </style>
 </head>
 <body>
+  <div id="splash">
+    <div class="logo"><span class="dot"></span>GYMFLOW</div>
+    <div class="bar"><i></i></div>
+    <p>Carregando seu treino...</p>
+    <div class="help" id="splash-help">
+      <p>Está demorando mais que o normal. Verifique a conexão. Se persistir, limpe o cache e recarregue.</p>
+      <button type="button" id="splash-reset">Limpar cache e recarregar</button>
+      <div class="err" id="splash-err"></div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var splash = document.getElementById('splash');
+      function hide() {
+        if (!splash) return;
+        splash.style.opacity = '0';
+        var el = splash; splash = null;
+        setTimeout(function () { el.remove(); }, 300);
+      }
+      // O Flutter avisa quando desenhou o primeiro quadro.
+      window.addEventListener('flutter-first-frame', hide);
+      // Se o app não abrir, mostra ajuda em vez de carregar para sempre.
+      setTimeout(function () {
+        var h = document.getElementById('splash-help');
+        if (splash && h) h.style.display = 'flex';
+      }, 15000);
+      function showError(msg) {
+        var e = document.getElementById('splash-err'), h = document.getElementById('splash-help');
+        if (!splash || !e || !h) return;
+        h.style.display = 'flex';
+        e.textContent = String(msg).slice(0, 240);
+      }
+      window.addEventListener('error', function (ev) { showError(ev.message || ev.error); });
+      window.addEventListener('unhandledrejection', function (ev) { showError(ev.reason); });
+      document.getElementById('splash-reset').addEventListener('click', async function () {
+        try {
+          var regs = (navigator.serviceWorker && await navigator.serviceWorker.getRegistrations()) || [];
+          for (var r of regs) await r.unregister();
+          if (window.caches) { for (var k of await caches.keys()) await caches.delete(k); }
+        } catch (e) {}
+        location.reload();
+      });
+    })();
+  </script>
   <script>
     // Modelo de embeddings semanticos rodando 100% no navegador (transformers.js + ONNX/WASM).
     let extractor = null;
