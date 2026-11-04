@@ -89,6 +89,51 @@ class DayDraftCard extends StatelessWidget {
                 ],
               ),
             ),
+            if (w.stretches.isNotEmpty || planner.state.profile.stretching) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        'ALONGAMENTOS',
+                        style: AppText.eyebrow(context.pal.muted),
+                      ),
+                    ),
+                    TextButton.icon(
+                      onPressed: () => _addStretches(context, planner, w),
+                      icon: const Icon(Icons.add_rounded, size: 18),
+                      label: const Text('Adicionar'),
+                    ),
+                  ],
+                ),
+              ),
+              for (final it in w.stretches)
+                if (catalog.byId(it.exerciseId) case final Exercise e)
+                  _Row(
+                    key: ValueKey('$day-st-${e.id}'),
+                    exercise: e,
+                    prescription: '${it.sets}×${it.reps}s',
+                    reason: draft.reasons[e.id],
+                    onOpen: () => showExercise(context, e),
+                    onSwap: () => showSubstitutes(
+                      context,
+                      day: day,
+                      index: w.stretches.indexOf(it),
+                      current: e,
+                      stretch: true,
+                    ),
+                    onRemove: () => planner.removeStretch(day, e.id),
+                  ),
+            ],
+            if (w.stretches.isNotEmpty || planner.state.profile.stretching)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 10, 8, 4),
+                child: Text(
+                  'TREINO',
+                  style: AppText.eyebrow(context.pal.muted),
+                ),
+              ),
             for (final (i, it) in w.items.indexed)
               if (catalog.byId(it.exerciseId) case final Exercise e)
                 _Row(
@@ -118,6 +163,25 @@ class DayDraftCard extends StatelessWidget {
   }
 }
 
+/// Abre o seletor para incluir (ou tirar) alongamentos do dia gerado.
+Future<void> _addStretches(
+  BuildContext context,
+  PlannerCubit planner,
+  Workout w,
+) => showModalBottomSheet<void>(
+  context: context,
+  isScrollControlled: true,
+  useSafeArea: true,
+  builder: (_) => ExercisePickerSheet(
+    stretch: true,
+    focus: w.focus,
+    chosen: {for (final i in w.stretches) i.exerciseId},
+    onToggle: (e, add) => add
+        ? planner.addStretch(w.weekday!, e)
+        : planner.removeStretch(w.weekday!, e.id),
+  ),
+);
+
 /// Abre o seletor para incluir (ou tirar) exercícios do dia gerado.
 Future<void> _addExercises(
   BuildContext context,
@@ -140,7 +204,8 @@ class _Row extends StatelessWidget {
   final Exercise exercise;
   final String prescription;
   final String? reason;
-  final VoidCallback onOpen, onSwap, onRemove;
+  final VoidCallback onOpen, onRemove;
+  final VoidCallback? onSwap;
 
   const _Row({
     super.key,
@@ -148,7 +213,7 @@ class _Row extends StatelessWidget {
     required this.prescription,
     required this.reason,
     required this.onOpen,
-    required this.onSwap,
+    this.onSwap,
     required this.onRemove,
   });
 
@@ -196,11 +261,12 @@ class _Row extends StatelessWidget {
               prescription,
               style: const TextStyle(fontWeight: FontWeight.w800),
             ),
-            IconButton(
-              tooltip: 'Trocar exercício',
-              icon: Icon(Icons.swap_horiz_rounded, color: p.accent),
-              onPressed: onSwap,
-            ),
+            if (onSwap != null)
+              IconButton(
+                tooltip: 'Trocar exercício',
+                icon: Icon(Icons.swap_horiz_rounded, color: p.accent),
+                onPressed: onSwap,
+              ),
             IconButton(
               tooltip: 'Remover',
               icon: Icon(Icons.close_rounded, color: p.muted),

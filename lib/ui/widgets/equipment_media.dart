@@ -12,9 +12,25 @@ Widget equipmentMedia({
   required Color color,
   required double height,
   bool still = false,
+  String? photo,
 }) {
+  // GIF animado → foto do exercício → desenho (só quando não há nada).
+  final drawing = Illustration(kind, color: color, height: height);
+  final fallback = photo == null
+      ? drawing
+      : Container(
+          width: height,
+          height: height,
+          color: Colors.white,
+          child: Image.network(
+            photo,
+            key: ValueKey(photo),
+            fit: BoxFit.contain,
+            errorBuilder: (_, _, _) => drawing,
+          ),
+        );
   Widget chain(int i) => i >= gifs.length
-      ? Illustration(kind, color: color, height: height)
+      ? fallback
       : still
       ? GifThumb(gifs[i], size: height, fallback: chain(i + 1))
       : GifView(gifs[i], height: height, fallback: chain(i + 1));

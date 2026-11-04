@@ -12,6 +12,9 @@ ThemeData buildTheme(Brightness brightness) {
         onSecondaryContainer: p.onVolt,
         surface: p.card,
         onSurface: p.text,
+        // Ícones comuns usam o texto; os botões preenchidos/tonais mantêm o
+        // par fundo + texto escuro (não herdam o branco do modo escuro).
+        onSurfaceVariant: p.text,
         outline: p.border,
         error: p.danger,
       );
@@ -105,9 +108,6 @@ ThemeData buildTheme(Brightness brightness) {
         textStyle: button,
       ),
     ),
-    iconButtonTheme: IconButtonThemeData(
-      style: IconButton.styleFrom(foregroundColor: p.text),
-    ),
     chipTheme: ChipThemeData(
       backgroundColor: p.card,
       selectedColor: p.volt,
@@ -115,7 +115,13 @@ ThemeData buildTheme(Brightness brightness) {
       shape: const StadiumBorder(),
       showCheckmark: false,
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 6),
-      labelStyle: TextStyle(fontWeight: FontWeight.w600, color: p.text),
+      // Selecionado = fundo lima: texto escuro (no escuro, p.text é branco).
+      labelStyle: TextStyle(
+        fontWeight: FontWeight.w600,
+        color: WidgetStateColor.resolveWith(
+          (s) => s.contains(WidgetState.selected) ? p.onVolt : p.text,
+        ),
+      ),
       secondaryLabelStyle: TextStyle(
         fontWeight: FontWeight.w700,
         color: p.onVolt,

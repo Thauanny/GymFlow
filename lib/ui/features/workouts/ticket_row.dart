@@ -16,6 +16,10 @@ class TicketRow extends StatelessWidget {
   final ValueChanged<int> onSetTap;
   final VoidCallback onOpen, onEditLoad, onRest, onToggleDone;
 
+  /// Alongamento: `reps` são segundos de cada posição, sem carga; o botão
+  /// abre o cronômetro da posição.
+  final bool stretch;
+
   const TicketRow({
     required this.exercise,
     required this.item,
@@ -24,6 +28,7 @@ class TicketRow extends StatelessWidget {
     required this.onEditLoad,
     required this.onRest,
     required this.onToggleDone,
+    this.stretch = false,
     super.key,
   });
 
@@ -33,6 +38,8 @@ class TicketRow extends StatelessWidget {
     final done = item.done;
     final prescription = exercise.isCardio
         ? '${item.reps} min'
+        : stretch
+        ? '${item.sets}×${item.reps}s'
         : '${item.sets}×${item.reps}';
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
@@ -89,7 +96,7 @@ class TicketRow extends StatelessWidget {
                   done: i < item.setsDone,
                   onTap: () => onSetTap(i),
                 ),
-              if (!exercise.isCardio) ...[
+              if (!exercise.isCardio && !stretch) ...[
                 const SizedBox(width: 4),
                 _MiniButton(
                   icon: Icons.fitness_center_rounded,
@@ -106,7 +113,9 @@ class TicketRow extends StatelessWidget {
                 Expanded(
                   child: _ActionButton(
                     icon: const Icon(Icons.play_circle_fill_rounded, size: 22),
-                    label: 'Descanso ${item.restSec}s',
+                    label: stretch
+                        ? 'Cronômetro ${item.reps}s'
+                        : 'Descanso ${item.restSec}s',
                     background: p.accent,
                     foreground: p.onAccent,
                     onTap: onRest,

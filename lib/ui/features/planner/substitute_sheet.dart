@@ -15,9 +15,12 @@ Future<void> showSubstitutes(
   required int day,
   required int index,
   required Exercise current,
+  bool stretch = false,
 }) {
   final planner = context.read<PlannerCubit>();
-  final options = planner.substitutesFor(current);
+  final options = stretch
+      ? planner.stretchSubstitutesFor(current)
+      : planner.substitutesFor(current);
   return showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -58,7 +61,9 @@ Future<void> showSubstitutes(
                         itemForExercise(e)?.label ?? equipLabel(e.equipKey),
                       ),
                       onTap: () {
-                        planner.swapExercise(day, index, e);
+                        stretch
+                            ? planner.swapStretch(day, index, e)
+                            : planner.swapExercise(day, index, e);
                         Navigator.pop(ctx);
                       },
                     ),

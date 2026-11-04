@@ -116,6 +116,7 @@ class PlanEvolver {
         items,
         day: current.day,
         weekday: current.weekday,
+        stretches: [for (final s in current.stretches) s.copy()],
       ),
       reasons,
       loadUps: loadUps,

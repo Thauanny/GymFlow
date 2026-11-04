@@ -27,11 +27,15 @@ class TrainingProfile {
   final int minutes;
   final String goalText;
 
+  /// Gerar alongamentos do dia junto com o treino.
+  final bool stretching;
+
   const TrainingProfile({
     this.goal = TrainingGoal.hypertrophy,
     this.level = 'intermediate',
     this.minutes = 60,
     this.goalText = '',
+    this.stretching = true,
   });
 
   TrainingProfile copyWith({
@@ -39,11 +43,13 @@ class TrainingProfile {
     String? level,
     int? minutes,
     String? goalText,
+    bool? stretching,
   }) => TrainingProfile(
     goal: goal ?? this.goal,
     level: level ?? this.level,
     minutes: minutes ?? this.minutes,
     goalText: goalText ?? this.goalText,
+    stretching: stretching ?? this.stretching,
   );
 
   Map<String, dynamic> toJson() => {
@@ -51,6 +57,7 @@ class TrainingProfile {
     'level': level,
     'min': minutes,
     'text': goalText,
+    'stretch': stretching,
   };
 
   factory TrainingProfile.fromJson(Map<String, dynamic> j) => TrainingProfile(
@@ -60,5 +67,6 @@ class TrainingProfile {
         : 'intermediate',
     minutes: (j['min'] as int?) ?? 60,
     goalText: (j['text'] as String?) ?? '',
+    stretching: (j['stretch'] as bool?) ?? true,
   );
 }

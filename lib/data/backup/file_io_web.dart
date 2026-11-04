@@ -1,22 +1,67 @@
 import 'dart:async';
 import 'dart:js_interop';
+import 'dart:js_interop_unsafe';
 
 import 'package:web/web.dart' as web;
 
-/// Baixa [content] como arquivo de texto.
-void downloadTextFile(String name, String content) {
-  final blob = web.Blob(
+/// Entrega [content] como arquivo. No celular (iOS/Android) abre a folha de
+/// compartilhar, onde dá para "Salvar em Arquivos"/Drive; o download por link
+/// é ignorado pelo Safari em apps da tela de início. Sem isso, baixa direto.
+Future<void> downloadTextFile(String name, String content) async {
+  final file = web.File(
     [content.toJS].toJS,
-    web.BlobPropertyBag(type: 'application/json'),
+    name,
+    web.FilePropertyBag(type: 'application/json'),
   );
-  final url = web.URL.createObjectURL(blob);
+  if (_isMobile) {
+    try {
+      final data = web.ShareData(files: [file].toJS, title: name);
+      if (web.window.navigator.canShare(data)) {
+        await web.window.navigator.share(data).toDart;
+        return;
+      }
+    } catch (e) {
+      // Usuário fechou a folha de compartilhar: não é erro, nada a baixar.
+      if ('$e'.contains('AbortError')) return;
+    }
+  }
+  final url = web.URL.createObjectURL(file);
   final a = web.HTMLAnchorElement()
     ..href = url
     ..download = name;
   web.document.body!.append(a);
   a.click();
   a.remove();
-  web.URL.revokeObjectURL(url);
+  // Revogar na hora cancela o download em alguns navegadores móveis.
+  Timer(const Duration(minutes: 1), () => web.URL.revokeObjectURL(url));
+}
+
+String get _ua => web.window.navigator.userAgent;
+
+/// iPhone/iPad (inclui iPadOS, que se apresenta como Mac com toque).
+bool get isIos =>
+    RegExp(r'iPhone|iPad|iPod').hasMatch(_ua) ||
+    (web.window.navigator.platform == 'MacIntel' &&
+        web.window.navigator.maxTouchPoints > 1);
+
+bool get isAndroid => _ua.contains('Android');
+
+bool get _isMobile => isIos || isAndroid;
+
+/// O app já está aberto a partir da tela de início (modo "instalado")?
+bool get isInstalledApp {
+  try {
+    // iOS (Safari e outros) marca o app aberto pela tela de início assim.
+    final ios = (web.window.navigator as JSObject)
+        .getProperty<JSAny?>('standalone'.toJS)
+        .dartify();
+    return ios == true ||
+        web.window.matchMedia('(display-mode: standalone)').matches ||
+        web.window.matchMedia('(display-mode: fullscreen)').matches ||
+        web.window.matchMedia('(display-mode: minimal-ui)').matches;
+  } catch (_) {
+    return false;
+  }
 }
 
 /// Abre o seletor de arquivos e devolve o texto do escolhido (null se vazio).
@@ -60,4 +105,24 @@ Future<bool> requestPersistentStorage() async {
 /// Abre [url] em outra aba, sem repassar a origem da página.
 void openUrl(String url) {
   web.window.open(url, '_blank', 'noopener,noreferrer');
+}
+
+/// O navegador (Chrome/Android) liberou o convite nativo de instalação?
+bool get canPromptInstall =>
+    web.window.getProperty<JSAny?>('__gfInstall'.toJS).isDefinedAndNotNull;
+
+/// Abre o convite nativo "Instalar app". Devolve true se a pessoa aceitou.
+Future<bool> promptInstall() async {
+  try {
+    final ev = web.window.getProperty<JSObject?>('__gfInstall'.toJS);
+    if (ev == null) return false;
+    ev.callMethod<JSAny?>('prompt'.toJS);
+    final choice = await ev
+        .getProperty<JSPromise<JSObject>>('userChoice'.toJS)
+        .toDart;
+    web.window.setProperty('__gfInstall'.toJS, null);
+    return choice.getProperty<JSString>('outcome'.toJS).toDart == 'accepted';
+  } catch (_) {
+    return false;
+  }
 }

@@ -58,7 +58,8 @@ class WorkoutCard extends StatelessWidget {
                         style: AppText.display(30),
                       ),
                       Text(
-                        '${w.items.length} exercícios · ~${w.estimatedMinutes} min',
+                        '${w.items.length} exercícios · ~${w.estimatedMinutes} min'
+                        '${w.stretches.isEmpty ? '' : ' · alongamento'}',
                         style: TextStyle(fontSize: 13, color: p.muted),
                       ),
                     ],

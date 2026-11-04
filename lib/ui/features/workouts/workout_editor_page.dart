@@ -9,6 +9,7 @@ import '../../../state/catalog_cubit.dart';
 import '../../../state/workouts_cubit.dart';
 import '../../widgets/page_body.dart';
 import '../../widgets/section_title.dart';
+import '../../../domain/training/stretch_planner.dart';
 import 'editor_item_row.dart';
 import 'exercise_picker_sheet.dart';
 
@@ -53,6 +54,9 @@ class _WorkoutEditorPageState extends State<WorkoutEditorPage> {
   );
   late String _focus = widget.existing?.day ?? widget.focusId ?? 'full';
   late int? _weekday = widget.existing?.weekday ?? widget.weekday;
+  late final List<PlanItem> _stretches = [
+    for (final i in widget.existing?.stretches ?? <PlanItem>[]) i.copy(),
+  ];
   late final List<PlanItem> _items = [
     for (final i in widget.existing?.items ?? <PlanItem>[]) i.copy(),
   ];
@@ -76,10 +80,30 @@ class _WorkoutEditorPageState extends State<WorkoutEditorPage> {
       ..day = _focus
       ..weekday = _weekday
       ..items.clear()
-      ..items.addAll(_items);
+      ..items.addAll(_items)
+      ..stretches.clear()
+      ..stretches.addAll(_stretches);
     context.read<WorkoutsCubit>().save(w);
     Navigator.of(context).pop(w);
   }
+
+  Future<void> _addStretches() => showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    builder: (_) => ExercisePickerSheet(
+      stretch: true,
+      focus: focusById(_focus),
+      chosen: {for (final i in _stretches) i.exerciseId},
+      onToggle: (e, add) => setState(() {
+        add
+            ? _stretches.add(
+                PlanItem(e.id, stretchSets, stretchHoldSec, restSec: 0),
+              )
+            : _stretches.removeWhere((i) => i.exerciseId == e.id);
+      }),
+    ),
+  );
 
   Future<void> _addExercises() => showModalBottomSheet<void>(
     context: context,
@@ -113,7 +137,7 @@ class _WorkoutEditorPageState extends State<WorkoutEditorPage> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: FilledButton.icon(
-              onPressed: _items.isEmpty ? null : _save,
+              onPressed: _items.isEmpty && _stretches.isEmpty ? null : _save,
               icon: const Icon(Icons.bookmark_add_outlined),
               label: const Text('Salvar treino'),
             ),
@@ -156,6 +180,43 @@ class _WorkoutEditorPageState extends State<WorkoutEditorPage> {
                 ),
             ],
           ),
+          SectionTitle(
+            'Alongamentos (${_stretches.length})',
+            trailing: FilledButton.tonalIcon(
+              onPressed: _addStretches,
+              icon: const Icon(Icons.add_rounded),
+              label: const Text('Adicionar'),
+            ),
+          ),
+          if (_stretches.isEmpty)
+            const Padding(
+              padding: EdgeInsets.all(20),
+              child: Center(
+                child: Text('Opcional. Toque em "Adicionar" para alongar.'),
+              ),
+            )
+          else
+            ReorderableListView(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              buildDefaultDragHandles: false,
+              onReorder: (a, b) => setState(() {
+                if (b > a) b--;
+                _stretches.insert(b, _stretches.removeAt(a));
+              }),
+              children: [
+                for (final (i, it) in _stretches.indexed)
+                  EditorItemRow(
+                    key: ValueKey('st-${it.exerciseId}-$i'),
+                    index: i,
+                    stretch: true,
+                    exercise: catalog.byId(it.exerciseId),
+                    item: it,
+                    onRemove: () => setState(() => _stretches.removeAt(i)),
+                    onChanged: () => setState(() {}),
+                  ),
+              ],
+            ),
           SectionTitle(
             'Exercícios (${_items.length})',
             trailing: FilledButton.tonalIcon(

@@ -17,10 +17,14 @@ class ExercisePickerSheet extends StatefulWidget {
   final Set<String> chosen;
   final void Function(Exercise exercise, bool add) onToggle;
 
+  /// Escolhe alongamentos (e só eles); sem isso, só exercícios de treino.
+  final bool stretch;
+
   const ExercisePickerSheet({
     required this.focus,
     required this.chosen,
     required this.onToggle,
+    this.stretch = false,
     super.key,
   });
 
@@ -32,10 +36,21 @@ class _ExercisePickerSheetState extends State<ExercisePickerSheet> {
   String _query = '';
   String? _muscle;
   bool _onlyFocus = true; // limita aos músculos do foco do dia
-  late bool _mine = context.read<EquipmentCubit>().state.available.isNotEmpty;
+  late bool _mine =
+      widget.stretch ||
+      context.read<EquipmentCubit>().state.available.isNotEmpty;
 
   bool _matchesFocus(Exercise e) {
     final f = widget.focus;
+    if (widget.stretch) {
+      // Dia de cardio: alongar as pernas.
+      final muscles = f.isCardio ? dayFocuses['legs']!.muscles : f.muscles;
+      return f.isFullBody ||
+          !_onlyFocus ||
+          e.primary.any(muscles.contains) ||
+          (e.primary.contains('lower back') && muscles.contains('abdominals'));
+    }
+    if (e.category == 'stretching') return false;
     if (f.isCardio) return e.isCardio;
     if (f.isFullBody || !_onlyFocus) return true;
     return !e.isCardio && e.primary.any(f.muscles.contains);
@@ -52,9 +67,16 @@ class _ExercisePickerSheetState extends State<ExercisePickerSheet> {
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
-    final pool = _mine
-        ? context.read<EquipmentCubit>().state.available
-        : context.read<CatalogCubit>().state.exercises;
+    final all = context.read<CatalogCubit>().state.exercises;
+    final equip = context.read<EquipmentCubit>();
+    final pool = widget.stretch
+        ? (_mine
+              ? equip.stretches
+              : [
+                  for (final e in all)
+                    if (e.category == 'stretching') e,
+                ])
+        : (_mine ? equip.state.available : all);
     final base = pool.where(_matchesFocus).toList();
     final muscles = {for (final e in base) ...e.primary};
     final list = base
@@ -72,9 +94,11 @@ class _ExercisePickerSheetState extends State<ExercisePickerSheet> {
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: TextField(
               onChanged: (v) => setState(() => _query = v),
-              decoration: const InputDecoration(
-                hintText: 'Buscar exercício ou músculo',
-                prefixIcon: Icon(Icons.search_rounded),
+              decoration: InputDecoration(
+                hintText: widget.stretch
+                    ? 'Buscar alongamento ou músculo'
+                    : 'Buscar exercício ou músculo',
+                prefixIcon: const Icon(Icons.search_rounded),
               ),
             ),
           ),

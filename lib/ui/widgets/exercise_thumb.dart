@@ -21,7 +21,9 @@ class ExerciseThumb extends StatelessWidget {
     final gifs = context.read<GifCatalog>();
     final item = itemForExercise(exercise);
     final own = gifs.gifFor(exercise);
-    final itemGif = item == null ? null : gifs.itemGif(item.id);
+    // Itens genéricos (peso corporal, "outros") não representam o movimento.
+    final generic = item == null || item.rest || item.dbEquip == 'body only';
+    final itemGif = generic ? null : gifs.itemGif(item.id);
     return ClipRRect(
       key: ValueKey('thumb-${exercise.id}'),
       borderRadius: BorderRadius.circular(14),
@@ -34,6 +36,7 @@ class ExerciseThumb extends StatelessWidget {
           color: context.pal.tints[2],
           height: size,
           still: size <= 72 && isPhone(context),
+          photo: exercise.imageUrl,
         ),
       ),
     );

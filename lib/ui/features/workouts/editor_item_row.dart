@@ -15,12 +15,16 @@ class EditorItemRow extends StatelessWidget {
   final PlanItem item;
   final VoidCallback onRemove, onChanged;
 
+  /// Alongamento: as repetições são os segundos de cada posição.
+  final bool stretch;
+
   const EditorItemRow({
     required this.index,
     required this.exercise,
     required this.item,
     required this.onRemove,
     required this.onChanged,
+    this.stretch = false,
     super.key,
   });
 
@@ -71,18 +75,24 @@ class EditorItemRow extends StatelessWidget {
                 ),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
+            Wrap(
+              alignment: WrapAlignment.end,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                if (!isCardio)
+                if (!isCardio || stretch)
                   _Stepper('Séries', item.sets, (v) {
                     item.sets = v;
                     onChanged();
                   }),
-                _Stepper(isCardio ? 'Minutos' : 'Reps', item.reps, (v) {
-                  item.reps = v;
-                  onChanged();
-                }),
+                _Stepper(
+                  stretch ? 'Segundos' : (isCardio ? 'Minutos' : 'Reps'),
+                  item.reps,
+                  (v) {
+                    item.reps = v;
+                    onChanged();
+                  },
+                  step: stretch ? 5 : 1,
+                ),
               ],
             ),
           ],
@@ -96,7 +106,8 @@ class _Stepper extends StatelessWidget {
   final String label;
   final int value;
   final ValueChanged<int> onChanged;
-  const _Stepper(this.label, this.value, this.onChanged);
+  final int step;
+  const _Stepper(this.label, this.value, this.onChanged, {this.step = 1});
 
   @override
   Widget build(BuildContext context) {
@@ -107,13 +118,13 @@ class _Stepper extends StatelessWidget {
         IconButton(
           visualDensity: VisualDensity.compact,
           icon: const Icon(Icons.remove_circle_outline_rounded, size: 20),
-          onPressed: value > 1 ? () => onChanged(value - 1) : null,
+          onPressed: value > step ? () => onChanged(value - step) : null,
         ),
         Text('$value', style: const TextStyle(fontWeight: FontWeight.w800)),
         IconButton(
           visualDensity: VisualDensity.compact,
           icon: const Icon(Icons.add_circle_outline_rounded, size: 20),
-          onPressed: () => onChanged(value + 1),
+          onPressed: () => onChanged(value + step),
         ),
         const SizedBox(width: 6),
       ],

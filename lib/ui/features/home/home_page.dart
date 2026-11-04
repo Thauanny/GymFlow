@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../state/equipment_cubit.dart';
-import '../../../state/nav_cubit.dart';
 import '../../../state/progress_cubit.dart';
-import '../../widgets/notice_banner.dart';
 import '../../widgets/page_body.dart';
 import '../../widgets/section_title.dart';
+import '../settings/install_guide.dart';
 import 'recent_logs.dart';
 import 'stats_band.dart';
 import 'today_card.dart';
@@ -22,19 +20,11 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final noEquipment = context.select<EquipmentCubit, bool>(
-      (c) => c.state.saved.isEmpty,
-    );
     return PageBody(
       title: _greeting(),
       subtitle: 'Pronto para o treino de hoje?',
       children: [
-        if (noEquipment)
-          NoticeBanner(
-            text: 'Comece escolhendo os equipamentos da sua academia.',
-            action: 'Escolher',
-            onTap: () => context.read<NavCubit>().go(AppTab.equipment),
-          ),
+        const InstallBanner(),
         const TodayCard(),
         const SizedBox(height: 16),
         BlocBuilder<ProgressCubit, ProgressState>(

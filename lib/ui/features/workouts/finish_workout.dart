@@ -18,7 +18,7 @@ Future<bool> finishWorkout(BuildContext context, Workout w) async {
   );
   if (minutes == null || !context.mounted) return false;
   context.read<ProgressCubit>().finish(w, minutes.round());
-  for (final i in w.items) {
+  for (final i in [...w.items, ...w.stretches]) {
     i.setsDone = 0;
   }
   context.read<WorkoutsCubit>().touch();

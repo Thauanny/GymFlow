@@ -9,6 +9,7 @@ import '../../widgets/app_card.dart';
 import '../../widgets/dialogs.dart';
 import '../../widgets/pill.dart';
 import '../../widgets/toast.dart';
+import 'install_guide.dart';
 
 /// "Seus dados": explica onde os dados ficam e permite exportar/importar um
 /// backup em arquivo, guardado fora do navegador.
@@ -24,10 +25,12 @@ class _DataBackupCardState extends State<DataBackupCard> {
 
   Future<void> _export(BackupService backup) async {
     try {
-      downloadTextFile(backup.fileName, backup.export());
-      showToast(context, 'Backup baixado. Guarde o arquivo num lugar seguro.');
+      await downloadTextFile(backup.fileName, backup.export());
+      if (mounted) {
+        showToast(context, 'Backup pronto. Guarde o arquivo num lugar seguro.');
+      }
     } on UnsupportedError catch (e) {
-      showToast(context, '$e', error: true);
+      if (mounted) showToast(context, '$e', error: true);
     }
   }
 
@@ -144,23 +147,51 @@ class _DataBackupCardState extends State<DataBackupCard> {
                 ],
               ),
               const SizedBox(height: 12),
-              Text(
-                'iPhone: toque em Compartilhar → "Adicionar à Tela de Início". '
-                'O Safari apaga os dados de sites que ficam 7 dias sem uso, '
-                'mas não os de apps adicionados à tela.',
-                style: TextStyle(fontSize: 12.5, color: p.muted, height: 1.35),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                'Android: no Chrome, toque em ⋮ → "Instalar app" (ou "Adicionar '
-                'à tela inicial"). O app abre em tela cheia e o Chrome protege '
-                'melhor os dados de apps instalados.',
-                style: TextStyle(fontSize: 12.5, color: p.muted, height: 1.35),
-              ),
+              const Divider(height: 28),
+              const _ShortcutBlock(),
             ],
           ),
         );
       },
+    );
+  }
+}
+
+/// Atalho na tela de início: botão (instalação nativa no Chrome/Android) e,
+/// quando o navegador não oferece isso, o passo a passo — sem repetir os dois.
+class _ShortcutBlock extends StatelessWidget {
+  const _ShortcutBlock();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    if (isInstalledApp) return const InstallGuide();
+    // Instalado ou não, o aviso de limpeza de dados vale para o navegador.
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Atalho na tela de início',
+          style: TextStyle(fontWeight: FontWeight.w800, color: p.text),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          'Abre como app, em tela cheia.',
+          style: TextStyle(fontSize: 12.5, color: p.muted),
+        ),
+        const SizedBox(height: 12),
+        const AddShortcutButton(),
+        if (!canPromptInstall) ...[
+          const SizedBox(height: 14),
+          const InstallGuide(),
+        ],
+        const SizedBox(height: 14),
+        Text(
+          'Sem abrir por muitos dias (7 no iPhone), o navegador pode limpar '
+          'os dados do site. No app da tela de início isso não acontece.',
+          style: TextStyle(fontSize: 12, color: p.muted, height: 1.4),
+        ),
+      ],
     );
   }
 }

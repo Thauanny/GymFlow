@@ -122,6 +122,14 @@
     // Pede ao navegador que não apague os dados locais (armazenamento persistente).
     if (navigator.storage && navigator.storage.persist) navigator.storage.persist();
   </script>
+  <script>
+    // Guarda o convite de instalação do Chrome/Android para o botão "Adicionar atalho".
+    window.addEventListener('beforeinstallprompt', function (e) {
+      e.preventDefault();
+      window.__gfInstall = e;
+    });
+    window.addEventListener('appinstalled', function () { window.__gfInstall = null; });
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

@@ -8,7 +8,17 @@ class Workout {
   int? weekday; // 1 = segunda ... 7 = domingo
   final List<PlanItem> items;
 
-  Workout(this.id, this.name, this.items, {this.day = 'full', this.weekday});
+  /// Alongamentos do dia (ficha à parte): `reps` = segundos de cada posição.
+  final List<PlanItem> stretches;
+
+  Workout(
+    this.id,
+    this.name,
+    this.items, {
+    this.day = 'full',
+    this.weekday,
+    List<PlanItem>? stretches,
+  }) : stretches = stretches ?? [];
 
   DayFocus get focus => focusById(day);
   int get doneCount => items.where((i) => i.done).length;
@@ -29,6 +39,7 @@ class Workout {
     'wd': weekday,
     'day': day,
     'items': items.map((e) => e.toJson()).toList(),
+    if (stretches.isNotEmpty) 'st': stretches.map((e) => e.toJson()).toList(),
   };
 
   factory Workout.fromJson(Map<String, dynamic> j) => Workout(
@@ -36,6 +47,9 @@ class Workout {
     j['name'],
     (j['items'] as List).map((e) => PlanItem.fromJson(e)).toList(),
     weekday: j['wd'] as int?,
+    stretches: [
+      for (final e in (j['st'] as List? ?? const [])) PlanItem.fromJson(e),
+    ],
     day: focusById(j['day'] as String?).id,
   );
 }

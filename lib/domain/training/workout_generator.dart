@@ -8,6 +8,7 @@ import 'exercise_filter.dart';
 import 'exercise_scorer.dart';
 import 'prescription.dart';
 import 'progression.dart';
+import 'stretch_planner.dart';
 import 'stable_hash.dart';
 import 'training_profile.dart';
 
@@ -25,6 +26,12 @@ class GenerationRequest {
   final double? Function(String exerciseId) lastLoad;
   final bool Function(Exercise) hasGif;
 
+  /// Alongamentos possíveis (usados só se o perfil pedir alongamento).
+  final List<Exercise> stretchPool;
+
+  /// GIF do exercício (para não repetir a mesma imagem na ficha).
+  final String? Function(Exercise) gifUrl;
+
   const GenerationRequest({
     required this.profile,
     required this.focus,
@@ -35,11 +42,14 @@ class GenerationRequest {
     this.avoidIds = const {},
     this.relevance = const {},
     this.seed = 0,
+    this.stretchPool = const [],
+    this.gifUrl = _noGif,
     this.lastLoad = _noLoad,
   });
 }
 
 double? _noLoad(String _) => null;
+String? _noGif(Exercise _) => null;
 
 /// Treino gerado + o motivo de cada escolha.
 class GeneratedDay {
@@ -69,6 +79,9 @@ class WorkoutGenerator {
       items,
       day: r.focus.id,
       weekday: r.weekday,
+      stretches: r.profile.stretching
+          ? planStretches(r, reasons)
+          : <PlanItem>[],
     );
     return GeneratedDay(workout, reasons);
   }

@@ -11,12 +11,14 @@ import '../domain/training/prescription.dart';
 import '../domain/training/progression.dart';
 import '../domain/training/recovery.dart';
 import '../domain/training/split_planner.dart';
+import '../domain/training/stretch_planner.dart';
 import '../domain/training/substitutes.dart';
 import '../domain/training/training_profile.dart';
 import '../domain/training/workout_generator.dart';
 import '../models/day_focus.dart';
 import '../models/exercise.dart';
 import '../models/plan_item.dart';
+import '../models/workout.dart';
 import 'equipment_cubit.dart';
 import 'planner_state.dart';
 import 'progress_cubit.dart';
@@ -135,6 +137,82 @@ class PlannerCubit extends Cubit<PlannerState> {
     ];
   }
 
+  /// Alongamentos possíveis: os que usam o equipamento escolhido (elásticos,
+  /// bola, rolo...) e os sem equipamento.
+  List<Exercise> get stretchPool => _equipment.stretches;
+
+  /// Alongamentos para um treino que já existe (ex.: criado antes do recurso).
+  List<PlanItem> stretchesFor(Workout w) {
+    final reasons = <String, String>{};
+    return planStretches(
+      GenerationRequest(
+        profile: state.profile,
+        focus: w.focus,
+        weekday: w.weekday ?? 1,
+        pool: const [],
+        stretchPool: stretchPool,
+        gifUrl: _gifs.gifFor,
+        emphasis: state.emphasisFor(w.weekday ?? 0),
+        seed: DateTime.now().millisecondsSinceEpoch % 100000,
+        hasGif: (e) => _gifs.gifFor(e) != null,
+      ),
+      reasons,
+    );
+  }
+
+  /// Trocas para um alongamento: mesmo músculo, sem repetir os do plano nem
+  /// a mesma imagem.
+  List<Exercise> stretchSubstitutesFor(Exercise current) {
+    final used = {
+      for (final d in state.drafts.values)
+        ...d.workout.stretches.map((i) => i.exerciseId),
+    };
+    final gifs = {
+      for (final id in used)
+        _gifs.gifFor(
+          stretchPool.firstWhere((e) => e.id == id, orElse: () => current),
+        ),
+    };
+    final out = <Exercise>[];
+    final seen = <String?>{};
+    final c =
+        stretchPool
+            .where(
+              (e) =>
+                  e.id != current.id &&
+                  !used.contains(e.id) &&
+                  e.mainMuscle == current.mainMuscle,
+            )
+            .toList()
+          ..sort((a, b) {
+            int s(Exercise e) =>
+                _gifs.gifFor(e) != null ? 2 : (e.images.isNotEmpty ? 1 : 0);
+            return s(b) - s(a);
+          });
+    for (final e in c) {
+      final g = _gifs.gifFor(e);
+      if (g != null && (gifs.contains(g) || seen.contains(g))) continue;
+      seen.add(g);
+      out.add(e);
+      if (out.length >= 6) break;
+    }
+    return out;
+  }
+
+  void swapStretch(int day, int index, Exercise replacement) {
+    final draft = state.drafts[day];
+    if (draft == null) return;
+    final old = draft.workout.stretches[index];
+    draft.workout.stretches[index] = PlanItem(
+      replacement.id,
+      old.sets,
+      old.reps,
+      restSec: 0,
+    );
+    draft.reasons[replacement.id] = 'Troca sugerida do mesmo músculo';
+    emit(state.copyWith(drafts: {...state.drafts}));
+  }
+
   void setSemantic(bool value) => emit(state.copyWith(useSemantic: value));
 
   void setFocus(int d, String focusId) => _persist(
@@ -199,6 +277,8 @@ class PlannerCubit extends Cubit<PlannerState> {
         relevance: relevance,
         seed: seed,
         lastLoad: _progress.lastLoad,
+        stretchPool: stretchPool,
+        gifUrl: _gifs.gifFor,
         hasGif: (e) => _gifs.gifFor(e) != null,
       ),
     );
@@ -319,6 +399,26 @@ class PlannerCubit extends Cubit<PlannerState> {
 
   void removeExercise(int day, String exerciseId) {
     state.drafts[day]?.workout.items.removeWhere(
+      (i) => i.exerciseId == exerciseId,
+    );
+    emit(state.copyWith(drafts: {...state.drafts}));
+  }
+
+  void addStretch(int day, Exercise e) {
+    final draft = state.drafts[day];
+    if (draft == null ||
+        draft.workout.stretches.any((i) => i.exerciseId == e.id)) {
+      return;
+    }
+    draft.workout.stretches.add(
+      PlanItem(e.id, stretchSets, stretchHoldSec, restSec: 0),
+    );
+    draft.reasons[e.id] = 'Adicionado por você';
+    emit(state.copyWith(drafts: {...state.drafts}));
+  }
+
+  void removeStretch(int day, String exerciseId) {
+    state.drafts[day]?.workout.stretches.removeWhere(
       (i) => i.exerciseId == exerciseId,
     );
     emit(state.copyWith(drafts: {...state.drafts}));

@@ -39,8 +39,7 @@ const barbellItems = <EquipItem>[
     'Posterior de coxa e glúteos',
     'Romanian_Deadlift',
     'barbell',
-    pattern:
-        r'romanian|stiff|straight-leg deadlift|good morning|single leg deadlift',
+    pattern: r'romanian|stiff|straight-leg deadlift|single leg deadlift',
   ),
   EquipItem(
     'b_deadlift',

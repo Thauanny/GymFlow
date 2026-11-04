@@ -11,6 +11,7 @@ import '../../../models/plan_item.dart';
 import '../../../models/workout.dart';
 import '../../../state/catalog_cubit.dart';
 import '../../../state/nav_cubit.dart';
+import '../../../state/planner_cubit.dart';
 import '../../../state/workouts_cubit.dart';
 import '../../widgets/dialogs.dart';
 import '../../widgets/page_body.dart';
@@ -107,9 +108,31 @@ class _WorkoutTicketPageState extends State<WorkoutTicketPage>
     Navigator.of(context).pop();
   }
 
+  void _toggleStretch(PlanItem it) {
+    setState(() => it.done = !it.done);
+    context.read<WorkoutsCubit>().touch();
+    HapticFeedback.lightImpact();
+  }
+
+  void _addStretches() {
+    final list = context.read<PlannerCubit>().stretchesFor(w);
+    if (list.isEmpty) {
+      showToast(context, 'Nenhum alongamento disponível com seu equipamento.');
+      return;
+    }
+    setState(() => w.stretches.addAll(list));
+    context.read<WorkoutsCubit>().touch();
+  }
+
+  void _stretchSetTap(PlanItem it, int index) {
+    setState(() => it.setsDone = it.setsDone == index + 1 ? index : index + 1);
+    context.read<WorkoutsCubit>().touch();
+    HapticFeedback.lightImpact();
+  }
+
   void _reset() {
     setState(() {
-      for (final i in w.items) {
+      for (final i in [...w.items, ...w.stretches]) {
         i.setsDone = 0;
       }
     });
@@ -161,6 +184,35 @@ class _WorkoutTicketPageState extends State<WorkoutTicketPage>
                     ]),
                   ),
                   const SizedBox(height: 16),
+                  if (w.stretches.isEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: OutlinedButton.icon(
+                        onPressed: _addStretches,
+                        icon: const Icon(Icons.self_improvement_rounded),
+                        label: const Text('Gerar alongamentos do dia'),
+                      ),
+                    )
+                  else ...[
+                    _SectionLabel(
+                      'Alongamentos',
+                      '${w.stretches.where((s) => s.done).length}/${w.stretches.length}',
+                    ),
+                    for (final it in w.stretches)
+                      if (catalog.byId(it.exerciseId) case final Exercise e)
+                        TicketRow(
+                          key: ValueKey('st-${it.exerciseId}'),
+                          exercise: e,
+                          item: it,
+                          stretch: true,
+                          onSetTap: (i) => _stretchSetTap(it, i),
+                          onToggleDone: () => _toggleStretch(it),
+                          onOpen: () => showExercise(context, e),
+                          onEditLoad: () {},
+                          onRest: () => showRestTimer(context, it.reps),
+                        ),
+                    _SectionLabel('Treino', '${w.doneCount}/${w.items.length}'),
+                  ],
                   for (final it in w.items)
                     if (catalog.byId(it.exerciseId) case final Exercise e)
                       TicketRow(
@@ -234,7 +286,8 @@ class _Header extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            '${w.items.length} exercícios · ~${w.estimatedMinutes} min',
+            '${w.items.length} exercícios · ~${w.estimatedMinutes} min'
+            '${w.stretches.isEmpty ? '' : ' · ${w.stretches.length} alongamentos'}',
             style: TextStyle(
               fontWeight: FontWeight.w600,
               color: p.onVolt.withValues(alpha: .8),
@@ -276,6 +329,31 @@ class _Header extends StatelessWidget {
                 style: AppText.display(26, color: p.onVolt),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Título que separa as seções da ficha (alongamentos / treino).
+class _SectionLabel extends StatelessWidget {
+  final String title, count;
+  const _SectionLabel(this.title, this.count);
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(title.toUpperCase(), style: AppText.display(28)),
+          ),
+          Text(
+            count,
+            style: TextStyle(fontWeight: FontWeight.w800, color: p.muted),
           ),
         ],
       ),

@@ -96,6 +96,18 @@ class EquipmentCubit extends Cubit<EquipmentState> {
         .toList();
   }
 
+  /// Alongamentos possíveis: os sem equipamento (sempre) e os que usam algo
+  /// que o usuário tem (elásticos, bola, rolo...).
+  List<Exercise> get stretches {
+    final sel = equipItems.where((i) => state.saved.contains(i.id)).toList();
+    return [
+      for (final e in _catalog.state.exercises)
+        if (e.category == 'stretching' &&
+            (e.equipKey == 'body only' || sel.any((i) => itemMatches(i, e))))
+          e,
+    ];
+  }
+
   /// Recalcula tudo que depende da base de exercícios.
   void _refresh() {
     final all = _catalog.state.exercises;
