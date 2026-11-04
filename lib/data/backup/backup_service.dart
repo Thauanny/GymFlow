@@ -76,8 +76,17 @@ class BackupService {
     return changed != null && (backed == null || changed.isAfter(backed));
   }
 
-  bool get _hasData => backupKeys.any((k) {
-    if (k == 'theme_mode') return false;
+  /// Só vale lembrar de backup quando há algo que doeria perder: treinos,
+  /// histórico, cargas ou peso. Só escolher equipamentos ou dias não conta.
+  static const _valuableKeys = [
+    'workouts',
+    'workout_history',
+    'logs',
+    'weights',
+    'loads',
+  ];
+
+  bool get _hasData => _valuableKeys.any((k) {
     final v = _store.get(k);
     if (v is List) return v.isNotEmpty;
     return v is String && v.isNotEmpty && v != '[]' && v != '{}';
