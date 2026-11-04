@@ -94,8 +94,8 @@ class BackupService {
 
   bool _computeReminder() {
     if (!_hasData) return false;
-    final changed = hasChangesSinceBackup;
-    if (!changed && !needsBackup(hasData: true)) return false;
+    // Só avisa quando algo foi adicionado/alterado depois do último backup.
+    if (!hasChangesSinceBackup) return false;
     final dismissed = _date(_dismissedKey);
     final lastChange = _date(_lastChangeKey);
     return dismissed == null ||
