@@ -17,6 +17,7 @@ import '../domain/training/training_profile.dart';
 import '../domain/training/workout_generator.dart';
 import '../models/day_focus.dart';
 import '../models/exercise.dart';
+import '../models/labels.dart';
 import '../models/plan_item.dart';
 import '../models/workout.dart';
 import 'equipment_cubit.dart';
@@ -433,12 +434,62 @@ class PlannerCubit extends Cubit<PlannerState> {
       emit(state.copyWith(drafts: {...state.drafts}..remove(day)));
 
   bool hasConflicts() => state.drafts.values.any(
-    (d) => _workouts.state.forWeekday(d.workout.weekday!).isNotEmpty,
+    (d) =>
+        (d.workout.items.isNotEmpty || d.workout.stretches.isNotEmpty) &&
+        _workouts.state.forWeekday(d.workout.weekday!).isNotEmpty,
+  );
+
+  /// Modo manual: garante um treino (vazio) para cada dia escolhido, com o foco
+  /// do dia, e tira os dos dias que saíram. Não mexe no que já foi adicionado.
+  void ensureManualDrafts() {
+    final drafts = {...state.drafts};
+    var changed = false;
+    for (final d in days) {
+      final focus = focusById(state.focusFor(d));
+      final cur = drafts[d];
+      if (cur == null) {
+        drafts[d] = DayDraft(
+          Workout(
+            '${DateTime.now().microsecondsSinceEpoch}-$d',
+            '${focus.label} - ${weekdayNames[d - 1]}',
+            [],
+            day: focus.id,
+            weekday: d,
+          ),
+          {},
+        );
+        changed = true;
+      } else if (cur.workout.day != focus.id) {
+        cur.workout
+          ..day = focus.id
+          ..name = '${focus.label} - ${weekdayNames[d - 1]}';
+        changed = true;
+      }
+    }
+    final before = drafts.length;
+    drafts.removeWhere((d, _) => !days.contains(d));
+    if (changed || drafts.length != before) {
+      emit(state.copyWith(drafts: drafts));
+    }
+  }
+
+  /// Dias escolhidos que ainda não têm nenhum exercício (não dá para salvar).
+  List<int> get emptyDays => [
+    for (final e in state.drafts.entries)
+      if (e.value.workout.items.isEmpty) e.key,
+  ]..sort();
+
+  /// Algum rascunho tem exercício ou alongamento para salvar?
+  bool get hasContent => state.drafts.values.any(
+    (d) => d.workout.items.isNotEmpty || d.workout.stretches.isNotEmpty,
   );
 
   /// Salva os rascunhos como treinos e limpa o planejador.
   int commit({required bool replaceDays}) {
-    final list = state.drafts.values.map((d) => d.workout).toList();
+    final list = state.drafts.values
+        .map((d) => d.workout)
+        .where((w) => w.items.isNotEmpty || w.stretches.isNotEmpty)
+        .toList();
     _workouts.saveAll(list, replaceDays: replaceDays);
     emit(state.copyWith(drafts: const {}));
     return list.length;

@@ -20,11 +20,15 @@ class ExercisePickerSheet extends StatefulWidget {
   /// Escolhe alongamentos (e só eles); sem isso, só exercícios de treino.
   final bool stretch;
 
+  /// Só o que é do foco do dia (sem a opção de ampliar).
+  final bool strict;
+
   const ExercisePickerSheet({
     required this.focus,
     required this.chosen,
     required this.onToggle,
     this.stretch = false,
+    this.strict = false,
     super.key,
   });
 
@@ -45,10 +49,7 @@ class _ExercisePickerSheetState extends State<ExercisePickerSheet> {
     if (widget.stretch) {
       // Dia de cardio: alongar as pernas.
       final muscles = f.isCardio ? dayFocuses['legs']!.muscles : f.muscles;
-      return f.isFullBody ||
-          !_onlyFocus ||
-          e.primary.any(muscles.contains) ||
-          (e.primary.contains('lower back') && muscles.contains('abdominals'));
+      return f.isFullBody || !_onlyFocus || e.primary.any(muscles.contains);
     }
     if (e.category == 'stretching') return false;
     if (f.isCardio) return e.isCardio;
@@ -91,6 +92,20 @@ class _ExercisePickerSheetState extends State<ExercisePickerSheet> {
       child: Column(
         children: [
           Padding(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                '${widget.stretch ? 'Alongamentos' : 'Exercícios'} · '
+                '${widget.focus.label}',
+                style: const TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+            ),
+          ),
+          Padding(
             padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
             child: TextField(
               onChanged: (v) => setState(() => _query = v),
@@ -108,7 +123,9 @@ class _ExercisePickerSheetState extends State<ExercisePickerSheet> {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: 12),
               children: [
-                if (!widget.focus.isFullBody && !widget.focus.isCardio)
+                if (!widget.strict &&
+                    !widget.focus.isFullBody &&
+                    !widget.focus.isCardio)
                   Padding(
                     padding: const EdgeInsets.only(right: 6),
                     child: FilterChip(

@@ -58,12 +58,17 @@ class _DataBackupCardState extends State<DataBackupCard> {
   Future<void> _protect() async {
     final ok = await requestPersistentStorage();
     if (!mounted) return;
-    setState(() => _persistent = Future.value(ok));
+    // Bloco (não seta): o setState não pode receber uma função que devolve Future.
+    setState(() {
+      _persistent = Future.value(ok);
+    });
     if (!ok) {
+      // Não é falha do app: o navegador decide e costuma negar para sites
+      // que você ainda não usa muito, não favoritou ou não instalou.
       showToast(
         context,
-        'O navegador não liberou. Faça o backup em arquivo.',
-        error: true,
+        'O navegador não liberou agora (ele decide sozinho). Instale o app ou '
+        'adicione aos favoritos e tente de novo; e faça o backup em arquivo.',
       );
     }
   }

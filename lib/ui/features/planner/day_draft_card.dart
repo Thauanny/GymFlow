@@ -22,7 +22,15 @@ import 'substitute_sheet.dart';
 class DayDraftCard extends StatelessWidget {
   final int day;
   final DayDraft draft;
-  const DayDraftCard({required this.day, required this.draft, super.key});
+
+  /// Montagem manual: sem "gerar de novo"; o dia começa vazio.
+  final bool manual;
+  const DayDraftCard({
+    required this.day,
+    required this.draft,
+    this.manual = false,
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -33,129 +41,109 @@ class DayDraftCard extends StatelessWidget {
       for (final it in w.items)
         if (catalog.byId(it.exerciseId) case final Exercise e) e,
     ];
+    final p = context.pal;
+    final showStretches =
+        w.stretches.isNotEmpty || manual || planner.state.profile.stretching;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.only(bottom: 14),
       child: AppCard(
-        padding: const EdgeInsets.fromLTRB(16, 14, 8, 8),
+        padding: const EdgeInsets.fromLTRB(18, 16, 10, 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // O dia da semana é o destaque; o foco vem logo abaixo.
                       Text(
                         weekdayFull[day - 1].toUpperCase(),
-                        style: AppText.eyebrow(context.pal.muted),
+                        style: AppText.display(40),
                       ),
-                      Text(
-                        w.focus.label.toUpperCase(),
-                        style: AppText.display(34),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        children: [
+                          Pill(w.focus.label, icon: w.focus.icon),
+                          for (final label in workoutEquipment(exercises))
+                            Pill(label, color: p.muted),
+                        ],
                       ),
                     ],
                   ),
                 ),
-                IconButton.filled(
-                  style: IconButton.styleFrom(
-                    backgroundColor: context.pal.volt,
-                    foregroundColor: context.pal.onVolt,
+                if (!manual) ...[
+                  IconButton(
+                    tooltip: 'Gerar este dia de novo',
+                    icon: const Icon(Icons.refresh_rounded),
+                    onPressed: () => planner.generateDay(day),
                   ),
-                  tooltip: 'Adicionar exercício',
-                  icon: const Icon(Icons.add_rounded),
-                  onPressed: () => _addExercises(context, planner, w),
-                ),
-                IconButton(
-                  tooltip: 'Gerar este dia de novo',
-                  icon: const Icon(Icons.refresh_rounded),
-                  onPressed: () => planner.generateDay(day),
-                ),
-                IconButton(
-                  tooltip: 'Remover dia',
-                  icon: const Icon(Icons.delete_outline_rounded),
-                  onPressed: () => planner.removeDraft(day),
-                ),
+                  IconButton(
+                    tooltip: 'Remover dia',
+                    icon: const Icon(Icons.delete_outline_rounded),
+                    onPressed: () => planner.removeDraft(day),
+                  ),
+                ],
               ],
             ),
-            Padding(
-              padding: const EdgeInsets.only(right: 8, bottom: 8),
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (final label in workoutEquipment(exercises))
-                    Pill(label, color: context.pal.muted),
-                ],
+            if (showStretches) ...[
+              _SectionHeader(
+                'Alongamentos',
+                w.stretches.length,
+                onAdd: () => _addStretches(context, planner, w, manual),
               ),
-            ),
-            if (w.stretches.isNotEmpty || planner.state.profile.stretching) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 10, 0, 0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        'ALONGAMENTOS',
-                        style: AppText.eyebrow(context.pal.muted),
+              if (w.stretches.isEmpty)
+                const _Empty('Nenhum alongamento ainda.')
+              else
+                for (final it in w.stretches)
+                  if (catalog.byId(it.exerciseId) case final Exercise e)
+                    _Row(
+                      key: ValueKey('$day-st-${e.id}'),
+                      exercise: e,
+                      prescription: '${it.sets}×${it.reps}s',
+                      reason: draft.reasons[e.id],
+                      onOpen: () => showExercise(context, e),
+                      onSwap: () => showSubstitutes(
+                        context,
+                        day: day,
+                        index: w.stretches.indexOf(it),
+                        current: e,
+                        stretch: true,
                       ),
+                      onRemove: () => planner.removeStretch(day, e.id),
                     ),
-                    TextButton.icon(
-                      onPressed: () => _addStretches(context, planner, w),
-                      icon: const Icon(Icons.add_rounded, size: 18),
-                      label: const Text('Adicionar'),
-                    ),
-                  ],
-                ),
-              ),
-              for (final it in w.stretches)
+            ],
+            _SectionHeader(
+              'Exercícios',
+              w.items.length,
+              onAdd: () => _addExercises(context, planner, w, manual),
+            ),
+            if (w.items.isEmpty)
+              const _Empty('Nenhum exercício ainda.')
+            else
+              for (final (i, it) in w.items.indexed)
                 if (catalog.byId(it.exerciseId) case final Exercise e)
                   _Row(
-                    key: ValueKey('$day-st-${e.id}'),
+                    key: ValueKey('$day-${e.id}'),
                     exercise: e,
-                    prescription: '${it.sets}×${it.reps}s',
+                    prescription: e.isCardio
+                        ? '${it.reps} min'
+                        : '${it.sets}×${it.reps}',
                     reason: draft.reasons[e.id],
                     onOpen: () => showExercise(context, e),
                     onSwap: () => showSubstitutes(
                       context,
                       day: day,
-                      index: w.stretches.indexOf(it),
+                      index: i,
                       current: e,
-                      stretch: true,
                     ),
-                    onRemove: () => planner.removeStretch(day, e.id),
+                    onRemove: () => planner.removeItem(day, i),
                   ),
-            ],
-            if (w.stretches.isNotEmpty || planner.state.profile.stretching)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(0, 10, 8, 4),
-                child: Text(
-                  'TREINO',
-                  style: AppText.eyebrow(context.pal.muted),
-                ),
-              ),
-            for (final (i, it) in w.items.indexed)
-              if (catalog.byId(it.exerciseId) case final Exercise e)
-                _Row(
-                  key: ValueKey('$day-${e.id}'),
-                  exercise: e,
-                  prescription: e.isCardio
-                      ? '${it.reps} min'
-                      : '${it.sets}×${it.reps}',
-                  reason: draft.reasons[e.id],
-                  onOpen: () => showExercise(context, e),
-                  onSwap: () =>
-                      showSubstitutes(context, day: day, index: i, current: e),
-                  onRemove: () => planner.removeItem(day, i),
-                ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 4, 8, 8),
-              child: OutlinedButton.icon(
-                onPressed: () => _addExercises(context, planner, w),
-                icon: const Icon(Icons.add_rounded),
-                label: const Text('Adicionar exercício'),
-              ),
-            ),
           ],
         ),
       ),
@@ -163,17 +151,66 @@ class DayDraftCard extends StatelessWidget {
   }
 }
 
+/// Título de uma seção do dia, com o único botão de adicionar dela.
+class _SectionHeader extends StatelessWidget {
+  final String title;
+  final int count;
+  final VoidCallback onAdd;
+  const _SectionHeader(this.title, this.count, {required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.pal;
+    return Padding(
+      padding: const EdgeInsets.only(top: 14),
+      child: Column(
+        children: [
+          Divider(color: p.border),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  '${title.toUpperCase()} · $count',
+                  style: AppText.eyebrow(p.muted),
+                ),
+              ),
+              TextButton.icon(
+                onPressed: onAdd,
+                icon: const Icon(Icons.add_rounded, size: 18),
+                label: const Text('Adicionar'),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _Empty extends StatelessWidget {
+  final String text;
+  const _Empty(this.text);
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Text(text, style: TextStyle(fontSize: 13, color: context.pal.muted)),
+  );
+}
+
 /// Abre o seletor para incluir (ou tirar) alongamentos do dia gerado.
 Future<void> _addStretches(
   BuildContext context,
   PlannerCubit planner,
   Workout w,
+  bool strict,
 ) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
   useSafeArea: true,
   builder: (_) => ExercisePickerSheet(
     stretch: true,
+    strict: strict,
     focus: w.focus,
     chosen: {for (final i in w.stretches) i.exerciseId},
     onToggle: (e, add) => add
@@ -187,11 +224,13 @@ Future<void> _addExercises(
   BuildContext context,
   PlannerCubit planner,
   Workout w,
+  bool strict,
 ) => showModalBottomSheet<void>(
   context: context,
   isScrollControlled: true,
   useSafeArea: true,
   builder: (_) => ExercisePickerSheet(
+    strict: strict,
     focus: w.focus,
     chosen: {for (final i in w.items) i.exerciseId},
     onToggle: (e, add) => add

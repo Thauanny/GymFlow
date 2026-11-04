@@ -1,3 +1,4 @@
+import 'recovery.dart';
 import 'training_profile.dart';
 
 // Divisões clássicas de academia (ABC...), conforme o número de dias.
@@ -37,5 +38,27 @@ Map<int, String> suggestSplit(Iterable<int> weekdays, TrainingProfile p) {
       ? {..._standard, ..._beginner}
       : _standard;
   final split = table[days.length]!;
-  return {for (var i = 0; i < days.length; i++) days[i]: split[i]};
+  final focus = {for (var i = 0; i < days.length; i++) days[i]: split[i]};
+  return _restBetweenRepeats(focus);
+}
+
+/// Se um dia repetiria os músculos do dia anterior (inclusive domingo →
+/// segunda), troca esse dia por cardio, que deixa o músculo descansar. Assim
+/// a divisão sugerida nunca dispara o aviso de recuperação.
+Map<int, String> _restBetweenRepeats(Map<int, String> focus) {
+  final out = {...focus};
+  bool conflicts(int d) {
+    final next = d == 7 ? 1 : d + 1;
+    final a = out[d], b = out[next];
+    return a != null && b != null && sharedMuscles(a, b).isNotEmpty;
+  }
+
+  for (final d in focus.keys.toList()..sort()) {
+    final next = d == 7 ? 1 : d + 1;
+    if (!conflicts(d)) continue;
+    // O dia que repete vira cardio. No domingo → segunda, é o domingo que
+    // cede, para não mexer no primeiro treino da semana.
+    out[d == 7 ? d : next] = 'cardio';
+  }
+  return out;
 }

@@ -185,9 +185,14 @@ class _Logo extends StatelessWidget {
     return Row(
       children: [
         Container(
-          width: 12,
-          height: 12,
-          decoration: BoxDecoration(color: p.volt, shape: BoxShape.circle),
+          width: 14,
+          height: 14,
+          // Sempre com a borda preta, igual à tela de carregamento.
+          decoration: BoxDecoration(
+            color: p.volt,
+            shape: BoxShape.circle,
+            border: Border.all(color: p.onVolt, width: 2),
+          ),
         ),
         const SizedBox(width: 8),
         Text('GYMFLOW', style: AppText.display(28)),

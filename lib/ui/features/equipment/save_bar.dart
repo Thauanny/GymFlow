@@ -6,7 +6,6 @@ import '../../../state/equipment_cubit.dart';
 import '../../widgets/page_body.dart';
 import '../../widgets/toast.dart';
 import '../planner/planner_page.dart';
-import '../workouts/workout_editor_page.dart';
 
 /// Barra fixa: salvar a seleção ou seguir para montar o treino.
 class EquipmentSaveBar extends StatelessWidget {
@@ -83,12 +82,7 @@ class EquipmentSaveBar extends StatelessWidget {
       children: [
         Expanded(
           child: OutlinedButton.icon(
-            onPressed: disabled
-                ? null
-                : () async {
-                    final saved = await openWorkoutEditor(context);
-                    if (saved != null) onWorkoutSaved();
-                  },
+            onPressed: disabled ? null : () => openManualPlanner(context),
             icon: const Icon(Icons.edit_note_rounded),
             label: const Text('Montar manual'),
           ),

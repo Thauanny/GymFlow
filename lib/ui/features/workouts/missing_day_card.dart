@@ -4,10 +4,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/theme/app_palette.dart';
 import '../../../models/labels.dart';
 import '../../../state/equipment_cubit.dart';
-import '../../../state/planner_cubit.dart';
 import '../../widgets/app_card.dart';
 import '../planner/planner_page.dart';
-import 'workout_editor_page.dart';
 
 /// Dia escolhido que ainda não tem treino.
 class MissingDayCard extends StatelessWidget {
@@ -19,7 +17,6 @@ class MissingDayCard extends StatelessWidget {
     final ready = context.select<EquipmentCubit, bool>(
       (c) => c.state.available.isNotEmpty,
     );
-    final focusId = context.read<PlannerCubit>().state.focusFor(weekday);
     return Padding(
       padding: const EdgeInsets.only(bottom: 10),
       child: AppCard(
@@ -44,12 +41,7 @@ class MissingDayCard extends StatelessWidget {
                 Expanded(
                   child: OutlinedButton.icon(
                     onPressed: ready
-                        ? () => openWorkoutEditor(
-                            context,
-                            weekday: weekday,
-                            focusId: focusId,
-                            name: 'Treino - ${weekdayNames[weekday - 1]}',
-                          )
+                        ? () => openManualPlanner(context, weekday: weekday)
                         : null,
                     icon: const Icon(Icons.edit_outlined),
                     label: const Text('Criar manual'),

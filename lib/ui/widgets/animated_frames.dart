@@ -9,7 +9,13 @@ import '../../models/exercise.dart';
 class AnimatedFrames extends StatefulWidget {
   final String imageId;
   final double? height;
-  const AnimatedFrames(this.imageId, {this.height, super.key});
+  final BoxFit fit;
+  const AnimatedFrames(
+    this.imageId, {
+    this.height,
+    this.fit = BoxFit.cover,
+    super.key,
+  });
 
   @override
   State<AnimatedFrames> createState() => _AnimatedFramesState();
@@ -47,7 +53,7 @@ class _AnimatedFramesState extends State<AnimatedFrames> {
               opacity: _frame == f ? 1 : 0,
               child: Image.network(
                 frameUrl(widget.imageId, f),
-                fit: BoxFit.cover,
+                fit: widget.fit,
                 errorBuilder: (ctx, _, _) => Container(
                   color: ctx.pal.cardAlt,
                   child: const Icon(Icons.fitness_center),

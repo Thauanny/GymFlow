@@ -28,12 +28,13 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
   int _day = DateTime.now().weekday;
 
   /// Sem plano: "Montar plano". Com plano: "Mudar plano" e "Evoluir".
-  List<Widget> _actions(BuildContext context, WorkoutsState s) {
+  List<Widget> _actions(BuildContext context, WorkoutsState s, bool ready) {
     final hasPlan = s.workouts.any((w) => w.weekday != null);
     if (!hasPlan) {
       return [
         FilledButton.icon(
-          onPressed: () => openPlanner(context),
+          // Sem equipamento não há de onde tirar exercícios.
+          onPressed: ready ? () => openPlanner(context) : null,
           icon: const Icon(Icons.auto_awesome_rounded),
           label: const Text('Montar plano'),
         ),
@@ -41,16 +42,18 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
     }
     return [
       OutlinedButton.icon(
-        onPressed: () => showEvolveSheet(
-          context,
-          day: _day,
-          dayHasWorkout: s.forWeekday(_day).isNotEmpty,
-        ),
+        onPressed: !ready
+            ? null
+            : () => showEvolveSheet(
+                context,
+                day: _day,
+                dayHasWorkout: s.forWeekday(_day).isNotEmpty,
+              ),
         icon: const Icon(Icons.trending_up_rounded),
         label: const Text('Evoluir'),
       ),
       FilledButton.icon(
-        onPressed: () => showChangePlanSheet(context, day: _day),
+        onPressed: ready ? () => showChangePlanSheet(context, day: _day) : null,
         icon: const Icon(Icons.autorenew_rounded),
         label: const Text('Mudar plano'),
       ),
@@ -68,11 +71,11 @@ class _WorkoutsPageState extends State<WorkoutsPage> {
         return PageBody(
           title: 'Treinos',
           subtitle: 'Sua semana, dia a dia.',
-          actions: _actions(context, s),
+          actions: _actions(context, s, !noEquipment),
           children: [
             if (noEquipment)
               NoticeBanner(
-                text: 'Nenhum equipamento selecionado.',
+                text: 'Escolha seus equipamentos para montar o plano.',
                 action: 'Escolher',
                 onTap: () => context.read<NavCubit>().go(AppTab.equipment),
               ),

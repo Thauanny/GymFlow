@@ -31,11 +31,12 @@ class AppDrawer extends StatelessWidget {
               child: Row(
                 children: [
                   Container(
-                    width: 12,
-                    height: 12,
+                    width: 14,
+                    height: 14,
                     decoration: BoxDecoration(
                       color: p.volt,
                       shape: BoxShape.circle,
+                      border: Border.all(color: p.onVolt, width: 2),
                     ),
                   ),
                   const SizedBox(width: 8),

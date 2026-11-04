@@ -39,7 +39,7 @@
     /* Tela de abertura leve: aparece na hora, enquanto o app baixa (internet lenta). */
     #splash{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;background:#F7F7F4;color:#0B0B0C;font-family:-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif;z-index:10;transition:opacity .25s}
     #splash .logo{display:flex;align-items:center;gap:10px;font-size:34px;font-weight:900;letter-spacing:.5px}
-    #splash .dot{width:14px;height:14px;border-radius:50%;background:#C8FF2E;box-shadow:0 0 0 2px #0B0B0C}
+    #splash .dot{width:14px;height:14px;border-radius:50%;background:#C8FF2E;border:2px solid #0B0B0C;box-sizing:border-box}
     #splash .bar{width:160px;height:4px;border-radius:4px;background:#E6E6DF;overflow:hidden}
     #splash .bar i{display:block;width:40%;height:100%;border-radius:4px;background:#0B0B0C;animation:load 1.1s ease-in-out infinite}
     #splash p{margin:0;font-size:13px;color:#6E6E73}
@@ -48,7 +48,7 @@
     #splash button{font:inherit;font-weight:700;padding:12px 18px;border-radius:14px;border:0;background:#0B0B0C;color:#C8FF2E;cursor:pointer}
     #splash .err{font-size:11px;color:#C0392B;word-break:break-word}
     @keyframes load{0%{transform:translateX(-100%)}100%{transform:translateX(260%)}}
-    @media (prefers-color-scheme:dark){#splash{background:#0B0B0C;color:#F5F5F2}#splash .dot{box-shadow:none}#splash .bar{background:#2B2B2F}#splash .bar i{background:#C8FF2E}}
+    @media (prefers-color-scheme:dark){#splash{background:#0B0B0C;color:#F5F5F2}#splash .bar{background:#2B2B2F}#splash .bar i{background:#C8FF2E}}
   </style>
 </head>
 <body>

@@ -104,6 +104,11 @@ Future<bool> requestPersistentStorage() async {
 
 /// Abre [url] em outra aba, sem repassar a origem da página.
 void openUrl(String url) {
+  // mailto abre o app de e-mail na própria aba (em outra aba fica em branco).
+  if (url.startsWith('mailto:')) {
+    web.window.location.href = url;
+    return;
+  }
   web.window.open(url, '_blank', 'noopener,noreferrer');
 }
 

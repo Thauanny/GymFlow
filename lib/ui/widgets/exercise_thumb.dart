@@ -37,6 +37,7 @@ class ExerciseThumb extends StatelessWidget {
           height: size,
           still: size <= 72 && isPhone(context),
           photo: exercise.imageUrl,
+          photoId: exercise.images.isEmpty ? null : exercise.id,
         ),
       ),
     );

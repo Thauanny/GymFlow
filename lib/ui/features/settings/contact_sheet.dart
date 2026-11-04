@@ -7,8 +7,11 @@ import '../../../data/backup/file_io.dart';
 import '../../widgets/toast.dart';
 
 const linkedinUrl = 'https://www.linkedin.com/in/thauanny-ramos/';
+const contactEmail = 'gymflow.free@gmail.com';
+const _emailUrl =
+    'mailto:$contactEmail?subject=Sugest%C3%A3o%20para%20o%20GymFlow';
 
-/// Contato: sugestões e ideias chegam pelo LinkedIn da criadora do app.
+/// Contato: sugestões e ideias chegam por e-mail ou pelo LinkedIn da criadora.
 Future<void> showContactSheet(BuildContext context) =>
     showModalBottomSheet<void>(
       context: context,
@@ -29,6 +32,15 @@ class _ContactSheet extends StatelessWidget {
     }
   }
 
+  void _email(BuildContext context) {
+    try {
+      openUrl(_emailUrl);
+    } on UnsupportedError {
+      Clipboard.setData(const ClipboardData(text: contactEmail));
+      showToast(context, 'E-mail copiado: $contactEmail');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final p = context.pal;
@@ -43,7 +55,7 @@ class _ContactSheet extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Tem uma sugestão, encontrou algo estranho ou quer trocar uma '
-              'ideia sobre o GymFlow? Me chame no LinkedIn.',
+              'ideia sobre o GymFlow? Escreva por e-mail ou me chame no LinkedIn.',
               style: TextStyle(color: p.muted, fontSize: 15, height: 1.4),
             ),
             const SizedBox(height: 18),
@@ -92,14 +104,31 @@ class _ContactSheet extends StatelessWidget {
               icon: const Icon(Icons.open_in_new_rounded),
               label: const Text('Abrir LinkedIn'),
             ),
-            const SizedBox(height: 8),
-            TextButton.icon(
-              onPressed: () {
-                Clipboard.setData(const ClipboardData(text: linkedinUrl));
-                showToast(context, 'Link copiado');
-              },
-              icon: const Icon(Icons.copy_rounded),
-              label: const Text('Copiar link'),
+            const SizedBox(height: 10),
+            OutlinedButton.icon(
+              onPressed: () => _email(context),
+              icon: const Icon(Icons.mail_outline_rounded),
+              label: const Text('Enviar e-mail'),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              alignment: WrapAlignment.center,
+              crossAxisAlignment: WrapCrossAlignment.center,
+              children: [
+                Text(
+                  contactEmail,
+                  style: TextStyle(fontSize: 13, color: p.muted),
+                ),
+                IconButton(
+                  tooltip: 'Copiar e-mail',
+                  visualDensity: VisualDensity.compact,
+                  icon: Icon(Icons.copy_rounded, size: 18, color: p.muted),
+                  onPressed: () {
+                    Clipboard.setData(const ClipboardData(text: contactEmail));
+                    showToast(context, 'E-mail copiado');
+                  },
+                ),
+              ],
             ),
           ],
         ),

@@ -14,7 +14,9 @@ import '../../widgets/weekday_selector.dart';
 
 /// Dias de treino e a função (foco) de cada um.
 class DaysSection extends StatelessWidget {
-  const DaysSection({super.key});
+  /// Montagem manual: sem sugestão de divisão nem destaque de músculos.
+  final bool manual;
+  const DaysSection({this.manual = false, super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -27,8 +29,10 @@ class DaysSection extends StatelessWidget {
       children: [
         SectionTitle(
           'Dias da semana',
-          step: 3,
-          hint: 'Escolha quando treina. A divisão é sugerida automaticamente.',
+          step: manual ? 1 : 3,
+          hint: manual
+              ? 'Escolha quando treina e a função de cada dia, ou use a sugestão.'
+              : 'Escolha quando treina. A divisão é sugerida automaticamente.',
           trailing: days.isEmpty
               ? null
               : TextButton.icon(
@@ -43,7 +47,7 @@ class DaysSection extends StatelessWidget {
           onChanged: planner.setDays,
         ),
         if (days.isNotEmpty) const SizedBox(height: 18),
-        for (final d in days) _DayCard(day: d, state: s),
+        for (final d in days) _DayCard(day: d, state: s, manual: manual),
         for (final w in planner.warnings)
           Padding(
             padding: const EdgeInsets.only(top: 8),
@@ -66,7 +70,12 @@ class DaysSection extends StatelessWidget {
 class _DayCard extends StatelessWidget {
   final int day;
   final PlannerState state;
-  const _DayCard({required this.day, required this.state});
+  final bool manual;
+  const _DayCard({
+    required this.day,
+    required this.state,
+    required this.manual,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -97,7 +106,7 @@ class _DayCard extends StatelessWidget {
                   ),
               ],
             ),
-            if (focus.muscles.isNotEmpty && !focus.isFullBody) ...[
+            if (!manual && focus.muscles.isNotEmpty && !focus.isFullBody) ...[
               const SizedBox(height: 10),
               Text(
                 'Dar destaque (opcional)',
